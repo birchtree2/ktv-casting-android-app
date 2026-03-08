@@ -7,6 +7,8 @@ on:
   push:
     tags:
       - 'v*' # 触发标签，例如 v1.0.0
+  repository_dispatch:
+    types:[rust-lib-updated] # 接收来自 Rust 库发出的更新信号
 
 jobs:
   release-apk:
@@ -14,12 +16,53 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # ⚠️ 必须为 0，拉取所有 Git 历史，以便准确获取 Tag 和 Hash
 
-      # 1. 从 gradle.properties 提取依赖的 Rust 版本号
-      - name: Get Rust Lib Version
+      # 1. 动态获取版本号并统一格式
+      - name: Prepare Versions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          RUST_TAG=$(grep "rust_libs_version" gradle.properties | cut -d'=' -f2 | xargs)
+          # 获取当前代码的 Git 短哈希 (前 7 位)
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          
+          if[ "${{ github.event_name }}" == "repository_dispatch" ]; then
+            # ===== 场景 A：Rust库更新自动触发 =====
+            
+            # 1. 获取 Rust 库版本
+            RUST_TAG="${{ github.event.client_payload.version }}"
+            if [ -z "$RUST_TAG" ] ||[ "$RUST_TAG" == "null" ]; then
+              # 用户名已修改为 birchtree
+              RUST_TAG=$(gh release view --repo birchtree/ktv-casting --json tagName -q .tagName)
+            fi
+            
+            # 2. 获取 App 代码版本
+            # 找到最近的一个 Tag，如果仓库刚建还没打过任何 Tag，则回退使用 'master' 作为标识
+            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "master")
+            APP_CODE_VERSION="${LATEST_TAG}-${SHORT_SHA}"
+            
+          else
+            # ===== 场景 B：App 仓库手动推 Tag (v*) 触发 =====
+            
+            # 1. 获取 Rust 库版本 (从本地 gradle.properties 读取)
+            RUST_TAG=$(grep "rust_libs_version" gradle.properties | cut -d'=' -f2 | xargs)
+            
+            # 2. 获取 App 代码版本 (当前推送的 Tag + 短哈希)
+            APP_CODE_VERSION="${{ github.ref_name }}-${SHORT_SHA}"
+          fi
+          
+          # 组合最终的 Release 标签 
+          FINAL_RELEASE_TAG="${APP_CODE_VERSION}_rust-${RUST_TAG}"
+          
+          # 写入环境变量
           echo "RUST_TAG=$RUST_TAG" >> $GITHUB_ENV
+          echo "APP_CODE_VERSION=$APP_CODE_VERSION" >> $GITHUB_ENV
+          echo "FINAL_RELEASE_TAG=$FINAL_RELEASE_TAG" >> $GITHUB_ENV
+          
+          echo "✅ RUST库版本: $RUST_TAG"
+          echo "✅ APP代码版本: $APP_CODE_VERSION"
+          echo "🚀 最终生成的 Release 标签: $FINAL_RELEASE_TAG"
 
       # 2. 设置 JDK 环境
       - name: Set up JDK 17
@@ -37,18 +80,18 @@ jobs:
           ABIS=("arm64-v8a" "armeabi-v7a" "x86_64" "x86")
           for ABI in "${ABIS[@]}"; do
             mkdir -p app/src/main/jniLibs/$ABI
-            # 下载并将 libktv_casting_lib-[ABI].so 重命名为 libktv_casting_lib.so
+            # 用户名已修改为 birchtree
             gh release download ${{ env.RUST_TAG }} \
-              --repo StarFreedomX/ktv-casting \
+              --repo birchtree/ktv-casting \
               --pattern "libktv_casting_lib-$ABI.so" \
               --output app/src/main/jniLibs/$ABI/libktv_casting_lib.so
           done
 
-      # 4. 还原签名文件 (从 Secret 的 Base64 字符串转回 .jks 文件)
+      # 4. 还原签名文件
       - name: Decode Keystore
         run: echo "${{ secrets.SIGNING_KEY }}" | base64 --decode > app/release.jks
 
-      # 5. 执行自定义的 packRelease 任务
+      # 5. 执行打包任务
       - name: Build Release APK
         env:
           STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
@@ -62,14 +105,15 @@ jobs:
           -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
           -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
           
-      # 6. 创建 GitHub Release 并上传 apks 文件夹下的新文件名文件
+      # 6. 创建 GitHub Release 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          # 指向根目录下的 apks 文件夹，抓取改名后的所有 APK
+          tag_name: ${{ env.FINAL_RELEASE_TAG }} 
           files: apks/*.apk
           generate_release_notes: true
           body: |
             ### KTV Casting Android App Release
-            - **App Version**: `${{ github.ref_name }}`
+            - **App Version**: `${{ env.APP_CODE_VERSION }}`
             - **Rust Engine Version**: `${{ env.RUST_TAG }}`
+            - **Trigger Type**: `${{ github.event_name == 'repository_dispatch' && 'Auto by Rust Update' || 'Manual Tag Push' }}`
