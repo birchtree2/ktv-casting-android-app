@@ -33,7 +33,8 @@ jobs:
             
             # 1. 获取 Rust 库版本
             RUST_TAG="${{ github.event.client_payload.version }}"
-            if[ -z "$RUST_TAG" ] || [ "$RUST_TAG" == "null" ]; then
+            echo "Client Payload Version: $RUST_TAG"
+            if [ -z "$RUST_TAG" ] || [ "$RUST_TAG" == "null" ]; then
               RUST_TAG=$(gh release view --repo birchtree/ktv-casting --json tagName -q .tagName)
             fi
             
@@ -52,7 +53,7 @@ jobs:
           fi
           
           # 组合最终的 Release 标签 
-          FINAL_RELEASE_TAG="${APP_CODE_VERSION}_rust-${RUST_TAG}"
+          FINAL_RELEASE_TAG="umi-${APP_CODE_VERSION}_rust-${RUST_TAG}"
           
           # 写入环境变量
           echo "RUST_TAG=$RUST_TAG" >> $GITHUB_ENV
