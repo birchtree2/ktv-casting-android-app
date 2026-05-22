@@ -29,29 +29,15 @@ jobs:
           # 获取当前代码的 Git 短哈希 (前 7 位)
           SHORT_SHA=$(git rev-parse --short HEAD)
           
-          # 修复：if 和[ 之间加了空格
+          # 统一从 gradle.properties 读取 Rust 库版本，避免与代码声明脱节
+          RUST_TAG=$(grep "rust_libs_version" gradle.properties | cut -d'=' -f2 | xargs)
+
           if [ "${{ github.event_name }}" == "repository_dispatch" ]; then
-            # ===== 场景 A：Rust库更新自动触发 =====
-            
-            # 1. 获取 Rust 库版本
-            RUST_TAG="${{ github.event.client_payload.version }}"
-            echo "Client Payload Version: $RUST_TAG"
-            if [ -z "$RUST_TAG" ] || [ "$RUST_TAG" == "null" ]; then
-              RUST_TAG=$(gh release view --repo birchtree2/ktv-casting --json tagName -q .tagName)
-            fi
-            
-            # 2. 获取 App 代码版本
-            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "master")
-            APP_CODE_VERSION="${LATEST_TAG}-${SHORT_SHA}"
-            
+            # ===== 场景 A：Rust库更新触发（仅作为构建触发，不覆盖本地版本声明） =====
+            APP_CODE_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "master")
           else
             # ===== 场景 B：App 仓库手动推 Tag (v*) 触发 =====
-            
-            # 1. 获取 Rust 库版本 (从本地 gradle.properties 读取)
-            RUST_TAG=$(grep "rust_libs_version" gradle.properties | cut -d'=' -f2 | xargs)
-            
-            # 2. 获取 App 代码版本 (当前推送的 Tag + 短哈希)
-            APP_CODE_VERSION="${{ github.ref_name }}-${SHORT_SHA}"
+            APP_CODE_VERSION="${{ github.ref_name }}"
           fi
           
           # 组合最终的 Release 标签 
@@ -85,13 +71,13 @@ jobs:
             mkdir -p "$TARGET_DIR"
             
             echo "正在下载 $ABI 架构的动态库..."
-            # 修复：使用 --dir 代替 --output，避开 gh cli 限制
+            # 使用 gradle.properties 中声明的版本，避免自动跟随最新 Rust Release
             gh release download ${{ env.RUST_TAG }} \
               --repo birchtree2/ktv-casting \
               --pattern "libktv_casting_lib-$ABI.so" \
               --dir "$TARGET_DIR"
               
-            # 修复：下载后重命名，去掉名字里的架构后缀，使其符合 Android JNI 规范
+            # 下载后重命名，去掉名字里的架构后缀，使其符合 Android JNI 规范
             mv "$TARGET_DIR/libktv_casting_lib-$ABI.so" "$TARGET_DIR/libktv_casting_lib.so"
           done
 
