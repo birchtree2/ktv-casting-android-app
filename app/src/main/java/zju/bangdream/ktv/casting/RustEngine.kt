@@ -34,6 +34,15 @@ object RustEngine {
     external fun initLogging(level: Int)
     external fun searchDevices(): Array<DlnaDeviceItem>
 
+    /**
+     * 通过设备描述 XML 的 URL 直接获取设备（适用于 WiFi 不支持多播的场景）
+     * 例如：http://192.168.1.x:9958/bilibili/description.xml
+     *
+     * @param url 设备的 XML 描述地址
+     * @return 成功返回包含一个元素的设备数组，失败返回空数组
+     */
+    external fun searchDeviceByUrl(url: String): Array<DlnaDeviceItem>
+
     // 核心初始化：启动 Rust 内部的 HttpServer 和状态机
     external fun startEngine(baseUrl: String, roomId: String, targetLocation: String)
 

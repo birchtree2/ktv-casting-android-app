@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -37,6 +39,8 @@ fun DeviceSelectorScreen(onDeviceSelect: (String, Long, DlnaDeviceItem) -> Unit)
     var showDescriptionHelp by remember { mutableStateOf(false) }
     var descriptionTabIndex by remember { mutableStateOf(0) }
     var descriptionInput by remember { mutableStateOf("") }
+    var isResolvingDescription by remember { mutableStateOf(false) }
+    var descriptionError by remember { mutableStateOf<String?>(null) }
 
     val saveSettings = {
         prefs.edit().apply {
@@ -171,11 +175,29 @@ fun DeviceSelectorScreen(onDeviceSelect: (String, Long, DlnaDeviceItem) -> Unit)
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
+
+                    descriptionError?.let { err ->
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = err, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                    }
+
+                    if (descriptionTabIndex == 0) {
+                        val ip = descriptionInput.trim()
+                        if (ip.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "将使用: http://$ip:9958/bilibili/description.xml",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                    }
                 }
             },
             confirmButton = {
                 TextButton(
                     onClick = {
+                        descriptionError = null
                         val descriptionUrl = if (descriptionTabIndex == 0) {
                             val ip = descriptionInput.trim()
                             if (ip.isNotEmpty()) {
@@ -186,21 +208,48 @@ fun DeviceSelectorScreen(onDeviceSelect: (String, Long, DlnaDeviceItem) -> Unit)
                         } else {
                             descriptionInput.trim()
                         }
-                        showDescriptionHelp = false
 
                         val trimmed = descriptionUrl.trim()
-                        if (trimmed.isNotEmpty()) {
-                            saveSettings()
-                            val roomId = roomIdStr.toLongOrNull() ?: 0L
-                            onDeviceSelect(
-                                baseUrl,
-                                roomId,
-                                DlnaDeviceItem(name = "手动设备", location = trimmed)
-                            )
+                        if (trimmed.isEmpty()) {
+                            descriptionError = "请输入 IP 或描述文件地址"
+                            return@TextButton
                         }
-                    }
+
+                        // 调用 Rust 层通过 URL 搜索设备，避免直接进入投屏
+                        isResolvingDescription = true
+                        thread {
+                            try {
+                                val results = RustEngine.searchDeviceByUrl(trimmed)
+                                Handler(Looper.getMainLooper()).post {
+                                    isResolvingDescription = false
+                                    if (results.isNotEmpty()) {
+                                        saveSettings()
+                                        val roomId = roomIdStr.toLongOrNull() ?: 0L
+                                        showDescriptionHelp = false
+                                        onDeviceSelect(baseUrl, roomId, results[0])
+                                    } else {
+                                        descriptionError = "未通过该地址找到设备，请确认地址或 IP 是否正确"
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Handler(Looper.getMainLooper()).post {
+                                    isResolvingDescription = false
+                                    descriptionError = "搜索设备时发生错误: ${e.message}"
+                                }
+                            }
+                        }
+                    },
+                    enabled = !isResolvingDescription
                 ) {
-                    Text("应用")
+                    if (isResolvingDescription) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("搜索中...")
+                        }
+                    } else {
+                        Text("应用")
+                    }
                 }
             },
             dismissButton = {
