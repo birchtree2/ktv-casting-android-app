@@ -22,6 +22,14 @@ class CastingService : Service() {
         private val _currentSongTitle = MutableStateFlow("正在加载...")
         val currentSongTitle = _currentSongTitle.asStateFlow()
 
+        // 投屏模式状态流
+        private val _castMode = MutableStateFlow("dlna")
+        val castMode = _castMode.asStateFlow()
+
+        fun setCastMode(mode: String) {
+            _castMode.value = mode
+        }
+
         fun resetProgress() {
             _playbackProgress.value = Pair(0L, 0L)
             _currentSongTitle.value = "已停止"
@@ -36,6 +44,9 @@ class CastingService : Service() {
         val mode = intent?.getStringExtra("mode") ?: "dlna"
         val location = intent?.getStringExtra("location") ?: ""
         val buvid = intent?.getStringExtra("buvid") ?: ""
+
+        // 存储投屏模式，供UI层读取
+        setCastMode(mode)
 
         // 1. 准备通知栏
         val notification = createNotification("准备投屏...")

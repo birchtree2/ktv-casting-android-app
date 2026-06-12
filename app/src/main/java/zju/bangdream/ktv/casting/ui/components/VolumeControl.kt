@@ -19,12 +19,18 @@ import kotlin.concurrent.thread
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun VolumeControlGroup() {
+fun VolumeControlGroup(castMode: String = "dlna") {
     var volumeValue by remember { mutableIntStateOf(50) }
     var isDragging by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
+            // 对于 Bilibili 投屏，初始值固定为 50（只能相对增减）
+            if (castMode == "bilibili") {
+                volumeValue = 50
+                return@withContext
+            }
+            // 对于 DLNA，尝试从设备获取
             repeat(5) {
                 val remoteVol = RustEngine.getVolume()
                 if (remoteVol >= 0) {

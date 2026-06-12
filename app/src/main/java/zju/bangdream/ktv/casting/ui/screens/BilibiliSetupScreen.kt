@@ -114,7 +114,7 @@ fun BilibiliSetupScreen(
             val json = withContext(Dispatchers.IO) { RustEngine.listBilibiliDevices() }
             val parsed = parseBilibiliDevices(json)
             devices = parsed
-            if (parsed.isEmpty()) devicesError = "未找到在线投屏设备\n请先在 B 站 App 上开始投屏，然后点击刷新"
+            if (parsed.isEmpty()) devicesError = "未找到在线投屏设备\n请先在哔哩哔哩小电视 App 上扫码登录同一账号，然后点击刷新"
             isLoadingDevices = false
         }
     }
@@ -199,7 +199,7 @@ fun BilibiliSetupScreen(
             Text("选择投屏设备", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                "请选择要控制的设备（设备需在 B 站 App 上处于活跃状态）",
+                "请选择要控制的设备（设备需登录同一b站账号）",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.secondary,
                 textAlign = TextAlign.Center

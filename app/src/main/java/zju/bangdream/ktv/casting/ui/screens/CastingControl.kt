@@ -25,6 +25,7 @@ fun CastingControlScreen(
     val (currentSec, totalSec) = progressState
 
     val songTitle by CastingService.currentSongTitle.collectAsState()
+    val castMode by CastingService.castMode.collectAsState()
 
     var isPlaying by remember { mutableStateOf(true) }
 
@@ -32,6 +33,7 @@ fun CastingControlScreen(
         deviceName = deviceName,
         roomId = roomId,
         songTitle = songTitle, // 传入标题
+        castMode = castMode,
         currentSec = currentSec,
         totalSec = totalSec,
         isPlaying = isPlaying,
@@ -56,6 +58,7 @@ fun CastingControlContent(
     deviceName: String,
     roomId: Long,
     songTitle: String, // 新增
+    castMode: String = "dlna",
     currentSec: Long,
     totalSec: Long,
     isPlaying: Boolean,
@@ -213,7 +216,7 @@ fun CastingControlContent(
         Spacer(modifier = Modifier.height(24.dp))
 
         // --- 音量控制区 (引入外部组件) ---
-        VolumeControlGroup()
+        VolumeControlGroup(castMode = castMode)
 
         Spacer(modifier = Modifier.height(56.dp))
 
@@ -247,6 +250,7 @@ fun CastingControlPreview() {
         CastingControlContent(
             deviceName = "Preview Device",
             roomId = 8888,
+            castMode = "dlna",
             currentSec = 45,
             totalSec = 210,
             isPlaying = true,
