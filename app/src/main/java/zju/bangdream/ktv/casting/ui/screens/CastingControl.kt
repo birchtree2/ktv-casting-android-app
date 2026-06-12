@@ -11,27 +11,25 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import zju.bangdream.ktv.casting.CastingService
-import zju.bangdream.ktv.casting.DlnaDeviceItem
 import zju.bangdream.ktv.casting.RustEngine
 import zju.bangdream.ktv.casting.ui.components.VolumeControlGroup
 import kotlin.concurrent.thread
 
 @Composable
 fun CastingControlScreen(
-    device: DlnaDeviceItem,
+    deviceName: String,
     roomId: Long,
     onReset: () -> Unit
 ) {
     val progressState by CastingService.playbackProgress.collectAsState()
     val (currentSec, totalSec) = progressState
 
-    // 观察歌名状态
     val songTitle by CastingService.currentSongTitle.collectAsState()
 
     var isPlaying by remember { mutableStateOf(true) }
 
     CastingControlContent(
-        deviceName = device.name,
+        deviceName = deviceName,
         roomId = roomId,
         songTitle = songTitle, // 传入标题
         currentSec = currentSec,

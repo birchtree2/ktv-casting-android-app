@@ -11,11 +11,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import zju.bangdream.ktv.casting.ui.screens.BilibiliSetupScreen
 import zju.bangdream.ktv.casting.ui.screens.CastingControlScreen
 import zju.bangdream.ktv.casting.ui.screens.DeviceSelectorScreen
 import zju.bangdream.ktv.casting.ui.screens.LogScreen
@@ -28,82 +28,83 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setupSystemRequirements()
         RustEngine.initLogging(2)
-    RustEngine.logFromKotlin("MainActivity", "应用启动", LogLevel.INFO)
+        RustEngine.logFromKotlin("MainActivity", "应用启动", LogLevel.INFO)
+
+        // 恢复上次保存的 B 站 Session（如果有）
+        val prefs = getSharedPreferences("ktv_settings", MODE_PRIVATE)
+        val savedSession = prefs.getString("bilibili_session", null)
+        if (!savedSession.isNullOrEmpty()) {
+            val ok = RustEngine.restoreBilibiliSession(savedSession)
+            RustEngine.logFromKotlin("MainActivity", "B站会话恢复: $ok", LogLevel.INFO)
+        }
 
         setContent {
             KtvCastingTheme {
-                val deviceSaver = remember {
-                    Saver<DlnaDeviceItem?, Map<String, String>>(
-                        save = { device ->
-                            if (device == null) {
-                                emptyMap()
-                            } else {
-                                mapOf("name" to device.name, "location" to device.location)
-                            }
-                        },
-                        restore = { data ->
-                            val name = data["name"]
-                            val location = data["location"]
-                            if (name != null && location != null) {
-                                DlnaDeviceItem(name, location)
-                            } else {
-                                null
-                            }
-                        }
-                    )
-                }
-
-                var selectedDevice by rememberSaveable(stateSaver = deviceSaver) {
-                    mutableStateOf<DlnaDeviceItem?>(null)
-                }
-                var selectedRoomId by rememberSaveable { mutableStateOf(0L) }
-                var selectedBaseUrl by rememberSaveable { mutableStateOf("") }
-                // 添加导航状态
+                // 导航状态
+                // "main" | "settings" | "logs" | "bilibili_setup"
                 var currentScreen by rememberSaveable { mutableStateOf("main") }
+
+                // 投屏会话状态（DLNA 或 Bilibili 二选一）
+                var castDeviceName by rememberSaveable { mutableStateOf("") }
+                var castRoomId by rememberSaveable { mutableLongStateOf(0L) }
+                // 用于 bilibili 临时存储 base_url 和 room_id，在进入 BilibiliSetupScreen 之前赋值
+                var pendingBaseUrl by rememberSaveable { mutableStateOf("") }
+                var pendingRoomId by rememberSaveable { mutableStateOf("") }
 
                 Surface(
                     modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    if (currentScreen == "settings") {
-                        SettingsScreen(
+                    when (currentScreen) {
+                        "settings" -> SettingsScreen(
                             onBack = { currentScreen = "main" },
                             onOpenLogs = { currentScreen = "logs" }
                         )
-                    } else if (currentScreen == "logs") {
-                        LogScreen(onBack = { currentScreen = "settings" })
-                    } else {
-                        Box {
-                            // 原有的主逻辑
-                            if (selectedDevice == null) {
-                                DeviceSelectorScreen(onDeviceSelect = { url, room, device ->
-                                    selectedDevice = device
-                                    selectedRoomId = room
-                                    selectedBaseUrl = url
-                                    startCastingService(url, room, device)
-                                })
+                        "logs" -> LogScreen(onBack = { currentScreen = "settings" })
+                        "bilibili_setup" -> BilibiliSetupScreen(
+                            onDeviceSelected = { buvid, name ->
+                                castDeviceName = name
+                                castRoomId = pendingRoomId.toLongOrNull() ?: 0L
+                                startBilibiliCastingService(pendingBaseUrl, pendingRoomId, buvid, name)
+                                currentScreen = "main"
+                            },
+                            onBack = { currentScreen = "main" }
+                        )
+                        else -> Box {
+                            if (castDeviceName.isEmpty()) {
+                                DeviceSelectorScreen(
+                                    onDeviceSelect = { url, room, device ->
+                                        castDeviceName = device.name
+                                        castRoomId = room
+                                        startDlnaCastingService(url, room, device)
+                                    },
+                                    onBilibiliMode = { url, roomId ->
+                                        pendingBaseUrl = url
+                                        pendingRoomId = roomId
+                                        currentScreen = "bilibili_setup"
+                                    }
+                                )
                             } else {
                                 CastingControlScreen(
-                                    device = selectedDevice!!,
-                                    roomId = selectedRoomId,
+                                    deviceName = castDeviceName,
+                                    roomId = castRoomId,
                                     onReset = {
                                         stopService(Intent(this@MainActivity, CastingService::class.java))
                                         RustEngine.resetEngine()
-                                        selectedDevice = null
-                                        selectedRoomId = 0L
-                                        selectedBaseUrl = ""
+                                        castDeviceName = ""
+                                        castRoomId = 0L
                                     }
                                 )
                             }
 
-
-                            IconButton(
-                                onClick = { currentScreen = "settings" },
-                                modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
-                            ) {
-                                Icon(Icons.Default.Settings, contentDescription = "设置")
+                            if (castDeviceName.isEmpty()) {
+                                IconButton(
+                                    onClick = { currentScreen = "settings" },
+                                    modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
+                                ) {
+                                    Icon(Icons.Default.Settings, contentDescription = "设置")
+                                }
                             }
-
                         }
                     }
                 }
@@ -116,21 +117,30 @@ class MainActivity : ComponentActivity() {
             requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1)
         }
         val wifiManager = getSystemService(WIFI_SERVICE) as WifiManager
-        val multicastLock = wifiManager.createMulticastLock("ktv_search_lock")
-        multicastLock.acquire()
+        wifiManager.createMulticastLock("ktv_search_lock").acquire()
     }
 
-    private fun startCastingService(url: String, room: Long, device: DlnaDeviceItem) {
-        RustEngine.logFromKotlin("Casting", "启动投屏服务: $url, room=$room")
+    private fun startDlnaCastingService(url: String, room: Long, device: DlnaDeviceItem) {
+        RustEngine.logFromKotlin("Casting", "启动 DLNA 投屏: $url, room=$room, device=${device.name}")
         val intent = Intent(this, CastingService::class.java).apply {
+            putExtra("mode", "dlna")
             putExtra("base_url", url)
             putExtra("room_id", room)
             putExtra("location", device.location)
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent)
+        else startService(intent)
+    }
+
+    private fun startBilibiliCastingService(url: String, roomId: String, buvid: String, deviceName: String) {
+        RustEngine.logFromKotlin("Casting", "启动B站云投屏: $url, room=$roomId, device=$deviceName")
+        val intent = Intent(this, CastingService::class.java).apply {
+            putExtra("mode", "bilibili")
+            putExtra("base_url", url)
+            putExtra("room_id", roomId.toLongOrNull() ?: 0L)
+            putExtra("buvid", buvid)
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent)
+        else startService(intent)
     }
 }

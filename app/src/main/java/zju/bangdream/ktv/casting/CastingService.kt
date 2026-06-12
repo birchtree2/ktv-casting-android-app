@@ -33,24 +33,25 @@ class CastingService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val baseUrl = intent?.getStringExtra("base_url") ?: ""
         val roomId = intent?.getLongExtra("room_id", 1111L) ?: 1111L
+        val mode = intent?.getStringExtra("mode") ?: "dlna"
         val location = intent?.getStringExtra("location") ?: ""
+        val buvid = intent?.getStringExtra("buvid") ?: ""
 
         // 1. 准备通知栏
         val notification = createNotification("准备投屏...")
 
-        // 根据 Android 版本启动前台服务
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // API 34+
-            startForeground(
-                1,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
-            )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
         } else {
             startForeground(1, notification)
         }
 
         // 2. 初始化 Rust 引擎
-    RustEngine.startEngine(baseUrl, roomId.toString(), location)
+        if (mode == "bilibili") {
+            RustEngine.startBilibiliEngine(baseUrl, roomId.toString(), buvid)
+        } else {
+            RustEngine.startEngine(baseUrl, roomId.toString(), location)
+        }
 
         // 3. 开启轮询逻辑
         startCommanderLoop()

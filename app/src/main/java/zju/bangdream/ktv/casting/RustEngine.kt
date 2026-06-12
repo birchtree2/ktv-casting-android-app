@@ -76,4 +76,27 @@ object RustEngine {
      * 获取歌曲标题
      */
     external fun getCurrentSongTitle(): String
+
+    // ---- 哔哩哔哩云投屏 ----
+
+    /** 后台启动扫码登录流程，通过 getBilibiliLoginStatus() 轮询状态 */
+    external fun startBilibiliQrLogin()
+
+    /** 返回当前登录状态：-2=未开始, 0=等待扫码, 1=成功, -1=失败/过期 */
+    external fun getBilibiliLoginStatus(): Int
+
+    /** 返回二维码 URL（status==0 时有效），空字符串表示尚未就绪 */
+    external fun getBilibiliQrUrl(): String
+
+    /** 返回在线投屏设备列表的 JSON 字符串（需已登录） */
+    external fun listBilibiliDevices(): String
+
+    /** 启动哔哩哔哩云投屏引擎 */
+    external fun startBilibiliEngine(baseUrl: String, roomId: String, deviceBuvid: String)
+
+    /** 返回当前会话 JSON，供持久化存储；未登录时返回空字符串 */
+    external fun getBilibiliSessionJson(): String
+
+    /** 从 JSON 字符串恢复会话（应用启动时调用）；成功返回 1，失败返回 0 */
+    external fun restoreBilibiliSession(json: String): Int
 }
