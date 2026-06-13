@@ -74,6 +74,7 @@ dependencies {
 
     // 更新检查
     implementation("androidx.work:work-runtime-ktx:2.8.1")
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
