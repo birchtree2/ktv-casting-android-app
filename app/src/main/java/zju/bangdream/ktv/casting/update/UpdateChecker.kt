@@ -95,6 +95,8 @@ class UpdateChecker(private val context: Context) {
     }
 
     fun shouldUpdate(releaseInfo: ReleaseInfo): Boolean {
+        val lastSeenTag = prefs.getString("last_seen_tag", "") ?: ""
+        if (releaseInfo.tagName == lastSeenTag) return false
         val lastReleaseTime = prefs.getLong("last_release_time", 0L)
         return releaseInfo.publishedAt > lastReleaseTime
     }
@@ -102,6 +104,7 @@ class UpdateChecker(private val context: Context) {
     fun saveLastCheckTime(releaseInfo: ReleaseInfo) {
         prefs.edit()
             .putLong("last_release_time", releaseInfo.publishedAt)
+            .putString("last_seen_tag", releaseInfo.tagName)
             .apply()
     }
 

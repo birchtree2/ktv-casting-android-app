@@ -15,10 +15,14 @@ object UpdateDialog {
         val builder = AlertDialog.Builder(context)
         builder.setTitle("发现新版本: ${releaseInfo.tagName}")
 
-        // 截取前 300 个字符的更新日志
+        // 清理 Markdown 符号并截取前 300 个字符
         val summary = releaseInfo.body
+            .replace(Regex("#{1,6}\\s*"), "")
+            .replace(Regex("\\*{1,3}"), "")
+            .replace(Regex("_"), "")
+            .replace(Regex("`"), "")
+            .replace(Regex("\n{2,}"), "\n")
             .take(300)
-            .replace("\n", " ")
             .trim()
         builder.setMessage(summary)
 
