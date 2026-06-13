@@ -33,7 +33,7 @@ fun VolumeControlGroup(castMode: String = "dlna") {
             // 对于 DLNA，尝试从设备获取
             repeat(5) {
                 val remoteVol = RustEngine.getVolume()
-                if (remoteVol >= 0) {
+                if (remoteVol > 0) {
                     volumeValue = remoteVol
                     return@withContext
                 }

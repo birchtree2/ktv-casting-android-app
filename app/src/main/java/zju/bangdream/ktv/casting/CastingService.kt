@@ -86,7 +86,10 @@ class CastingService : Service() {
                 val title = RustEngine.getCurrentSongTitle() // 获取 Rust 层存储的标题
 
                 _playbackProgress.value = Pair(current, total)
-                _currentSongTitle.value = title
+                // 有进度时不用"暂无歌曲"覆盖已知标题（bilibili 服务器 singing 字段可能提前清空）
+                if (title != "暂无歌曲" || total <= 0) {
+                    _currentSongTitle.value = title
+                }
 
                 if (current >= 0 && total > 0) {
                     // 通知栏现在显示：[歌名] 进度
