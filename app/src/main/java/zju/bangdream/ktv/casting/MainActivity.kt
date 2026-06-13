@@ -146,9 +146,9 @@ class MainActivity : ComponentActivity() {
                             "后台下载中，请稍候...",
                             Toast.LENGTH_SHORT
                         ).show()
+                        // 只在用户确认更新时保存检查时间
+                        updateChecker.saveLastCheckTime(releaseInfo)
                     }
-                    // 保存检查时间
-                    updateChecker.saveLastCheckTime(releaseInfo)
                 }
             } catch (e: Exception) {
                 RustEngine.logFromKotlin(
