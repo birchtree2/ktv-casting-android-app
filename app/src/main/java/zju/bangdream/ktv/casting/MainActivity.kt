@@ -150,9 +150,10 @@ class MainActivity : ComponentActivity() {
                             "检测到新版本，显示更新对话框",
                             LogLevel.INFO
                         )
+                        // 展示弹窗时即保存，避免旋转屏幕重建 Activity 后重复弹出
+                        updateChecker.saveLastCheckTime(releaseInfo)
                         UpdateDialog.showUpdateDialog(this@MainActivity, releaseInfo) {
                             try {
-                                // 用户点击"现在更新"时的回调
                                 val downloader = ApkDownloader(this@MainActivity)
                                 downloader.downloadAndInstall(releaseInfo)
                                 Toast.makeText(
@@ -160,8 +161,6 @@ class MainActivity : ComponentActivity() {
                                     "后台下载中，请稍候...",
                                     Toast.LENGTH_SHORT
                                 ).show()
-                                // 只在用户确认更新时保存检查时间
-                                updateChecker.saveLastCheckTime(releaseInfo)
                             } catch (e: Exception) {
                                 RustEngine.logFromKotlin(
                                     "MainActivity",
