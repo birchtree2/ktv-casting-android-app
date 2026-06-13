@@ -20,10 +20,17 @@ data class ReleaseInfo(
 class UpdateChecker(private val context: Context) {
     private val prefs = context.getSharedPreferences("update_check", Context.MODE_PRIVATE)
 
-    private val httpClient = OkHttpClient.Builder()
-        .connectTimeout(5, TimeUnit.SECONDS)
-        .readTimeout(5, TimeUnit.SECONDS)
-        .build()
+    private val httpClient: OkHttpClient by lazy {
+        try {
+            OkHttpClient.Builder()
+                .connectTimeout(5, TimeUnit.SECONDS)
+                .readTimeout(5, TimeUnit.SECONDS)
+                .build()
+        } catch (e: Exception) {
+            android.util.Log.e("UpdateChecker", "Failed to create OkHttpClient: ${e.message}")
+            throw e
+        }
+    }
 
     private val REPO_API_ENDPOINTS = listOf(
         "https://api.github.com/repos/KARAOKE-MASTER-ZJU/ktv-casting-android-app/releases/latest",

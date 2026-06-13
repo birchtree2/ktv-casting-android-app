@@ -19,11 +19,22 @@ import java.util.concurrent.TimeUnit
 
 class DownloadWorker(ctx: Context, params: WorkerParameters) : Worker(ctx, params) {
 
-    private val notificationManager = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-    private val httpClient = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .build()
+    private val notificationManager by lazy {
+        ctx.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            ?: throw IllegalStateException("NotificationManager not available")
+    }
+
+    private val httpClient: OkHttpClient by lazy {
+        try {
+            OkHttpClient.Builder()
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .build()
+        } catch (e: Exception) {
+            android.util.Log.e("DownloadWorker", "Failed to create OkHttpClient: ${e.message}")
+            throw e
+        }
+    }
 
     companion object {
         private const val NOTIFICATION_CHANNEL_ID = "apk_download"

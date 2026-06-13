@@ -133,28 +133,56 @@ class MainActivity : ComponentActivity() {
     private fun checkForAppUpdate() {
         lifecycleScope.launch {
             try {
+                RustEngine.logFromKotlin("MainActivity", "开始检查应用更新...", LogLevel.DEBUG)
+
                 val updateChecker = UpdateChecker(this@MainActivity)
                 val releaseInfo = updateChecker.fetchLatestRelease()
 
-                if (releaseInfo != null && updateChecker.shouldUpdate(releaseInfo)) {
-                    UpdateDialog.showUpdateDialog(this@MainActivity, releaseInfo) {
-                        // 用户点击"现在更新"时的回调
-                        val downloader = ApkDownloader(this@MainActivity)
-                        downloader.downloadAndInstall(releaseInfo)
-                        Toast.makeText(
-                            this@MainActivity,
-                            "后台下载中，请稍候...",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        // 只在用户确认更新时保存检查时间
-                        updateChecker.saveLastCheckTime(releaseInfo)
+                if (releaseInfo != null) {
+                    RustEngine.logFromKotlin(
+                        "MainActivity",
+                        "获取到最新版本: ${releaseInfo.tagName}",
+                        LogLevel.DEBUG
+                    )
+                    if (updateChecker.shouldUpdate(releaseInfo)) {
+                        RustEngine.logFromKotlin(
+                            "MainActivity",
+                            "检测到新版本，显示更新对话框",
+                            LogLevel.INFO
+                        )
+                        UpdateDialog.showUpdateDialog(this@MainActivity, releaseInfo) {
+                            try {
+                                // 用户点击"现在更新"时的回调
+                                val downloader = ApkDownloader(this@MainActivity)
+                                downloader.downloadAndInstall(releaseInfo)
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    "后台下载中，请稍候...",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                // 只在用户确认更新时保存检查时间
+                                updateChecker.saveLastCheckTime(releaseInfo)
+                            } catch (e: Exception) {
+                                RustEngine.logFromKotlin(
+                                    "MainActivity",
+                                    "启动更新失败: ${e.message}",
+                                    LogLevel.ERROR
+                                )
+                            }
+                        }
                     }
+                } else {
+                    RustEngine.logFromKotlin(
+                        "MainActivity",
+                        "无法获取最新版本信息",
+                        LogLevel.DEBUG
+                    )
                 }
             } catch (e: Exception) {
                 RustEngine.logFromKotlin(
                     "MainActivity",
-                    "检查更新失败: ${e.message}",
-                    LogLevel.DEBUG
+                    "检查更新异常: ${e.message} ${e.stackTrace.joinToString("\n")}",
+                    LogLevel.ERROR
                 )
             }
         }
