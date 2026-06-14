@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.activity.compose.BackHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.google.zxing.BarcodeFormat
@@ -59,6 +60,8 @@ fun BilibiliSetupScreen(
     onDeviceSelected: (buvid: String, name: String) -> Unit,
     onBack: () -> Unit,
 ) {
+    BackHandler { onBack() }
+
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("ktv_settings", Context.MODE_PRIVATE) }
 
