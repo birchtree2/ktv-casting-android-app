@@ -113,16 +113,24 @@ jobs:
           -Pandroid.injected.signing.key.password="$KEY_PASSWORD" \
           -Papp_version_name="${{ env.APP_CODE_VERSION }}"
           
-      # 6. 创建 GitHub Release 
+      # 6. 生成更新日志
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          NOTES=$(git log --pretty=format:"- %s" -10)
+          echo "NOTES<<EOF" >> $GITHUB_ENV
+          echo "$NOTES" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      # 7. 创建 GitHub Release
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ env.FINAL_RELEASE_TAG }} 
-          # 注意：请核对这里的路径，默认通常是 app/build/outputs/apk/release/*.apk
-          files: app/build/outputs/apk/release/*.apk 
-          generate_release_notes: true
+          tag_name: ${{ env.FINAL_RELEASE_TAG }}
+          files: app/build/outputs/apk/release/*.apk
           body: |
-            ### KTV Casting Android App Release
-            - **App Version**: `${{ env.APP_CODE_VERSION }}`
-            - **Rust Engine Version**: `${{ env.RUST_TAG }}`
-            - **Trigger Type**: `${{ github.event_name == 'repository_dispatch' && 'Auto by Rust Update' || 'Manual Tag Push' }}`
+            App 版本: ${{ env.APP_CODE_VERSION }}
+            Rust 引擎版本: ${{ env.RUST_TAG }}
+
+            更新内容:
+            ${{ env.NOTES }}

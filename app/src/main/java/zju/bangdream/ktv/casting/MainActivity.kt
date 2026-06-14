@@ -30,6 +30,10 @@ import zju.bangdream.ktv.casting.update.UpdateDialog
 
 class MainActivity : ComponentActivity() {
 
+    companion object {
+        private var updateCheckedThisSession = false
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setupSystemRequirements()
@@ -131,6 +135,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun checkForAppUpdate() {
+        if (updateCheckedThisSession) return
+        updateCheckedThisSession = true
         lifecycleScope.launch {
             try {
                 RustEngine.logFromKotlin("MainActivity", "开始检查应用更新...", LogLevel.DEBUG)
@@ -150,12 +156,12 @@ class MainActivity : ComponentActivity() {
                             "检测到新版本，显示更新对话框",
                             LogLevel.INFO
                         )
-                        // 展示弹窗时即保存，避免旋转屏幕重建 Activity 后重复弹出
-                        updateChecker.saveLastCheckTime(releaseInfo)
                         UpdateDialog.showUpdateDialog(this@MainActivity, releaseInfo) {
                             try {
                                 val downloader = ApkDownloader(this@MainActivity)
                                 downloader.downloadAndInstall(releaseInfo)
+                                // 用户确认更新后保存，下次启动不再提示同一版本
+                                updateChecker.saveLastCheckTime(releaseInfo)
                                 Toast.makeText(
                                     this@MainActivity,
                                     "后台下载中，请稍候...",
