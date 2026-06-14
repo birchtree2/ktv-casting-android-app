@@ -6,6 +6,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
+import java.net.ProxySelector
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 
@@ -23,6 +24,7 @@ class UpdateChecker(private val context: Context) {
     private val httpClient: OkHttpClient by lazy {
         try {
             OkHttpClient.Builder()
+                .proxySelector(ProxySelector.getDefault())
                 .connectTimeout(5, TimeUnit.SECONDS)
                 .readTimeout(5, TimeUnit.SECONDS)
                 .build()
