@@ -118,7 +118,6 @@ jobs:
         id: changelog
         run: |
           if [ "${{ github.event_name }}" == "repository_dispatch" ]; then
-            # Rust 库更新触发：说明更新了引擎，附加自上个 App Tag 以来的 commit
             LATEST_APP_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
             if [ -n "$LATEST_APP_TAG" ]; then
               APP_COMMITS=$(git log --pretty=format:"- %s" "$LATEST_APP_TAG"..HEAD)
@@ -126,15 +125,11 @@ jobs:
               APP_COMMITS=$(git log --pretty=format:"- %s" -10)
             fi
             if [ -n "$APP_COMMITS" ]; then
-              NOTES="更新 Rust 引擎至 $RUST_TAG
-
-App 端新增提交:
-$APP_COMMITS"
+              printf -v NOTES "更新 Rust 引擎至 %s\n\nApp 端新增提交:\n%s" "$RUST_TAG" "$APP_COMMITS"
             else
               NOTES="更新 Rust 引擎至 $RUST_TAG"
             fi
           else
-            # App Tag 触发：上个 Tag 到当前 Tag 之间的 commit
             PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
             if [ -n "$PREV_TAG" ]; then
               NOTES=$(git log --pretty=format:"- %s" "$PREV_TAG"..HEAD)
