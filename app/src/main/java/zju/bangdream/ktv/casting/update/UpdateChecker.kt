@@ -98,6 +98,14 @@ class UpdateChecker(private val context: Context) {
     }
 
     fun shouldUpdate(releaseInfo: ReleaseInfo): Boolean {
+        // 如果 release tag 以当前安装版本号开头，则不是新版本
+        val versionName = try {
+            val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+            packageInfo.versionName ?: ""
+        } catch (e: Exception) {
+            ""
+        }
+        if (versionName.isNotEmpty() && releaseInfo.tagName.startsWith(versionName)) return false
         val lastReleaseTime = prefs.getLong("last_release_time", 0L)
         return releaseInfo.publishedAt > lastReleaseTime
     }
