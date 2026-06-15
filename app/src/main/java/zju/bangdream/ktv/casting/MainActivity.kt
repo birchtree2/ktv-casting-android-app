@@ -102,6 +102,7 @@ class MainActivity : ComponentActivity() {
                                 CastingControlScreen(
                                     deviceName = castDeviceName,
                                     roomId = castRoomId,
+                                    baseUrl = getSharedPreferences("ktv_settings", MODE_PRIVATE).getString("base_url", "") ?: "",
                                     onReset = {
                                         stopService(Intent(this@MainActivity, CastingService::class.java))
                                         RustEngine.resetEngine()

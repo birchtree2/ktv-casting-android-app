@@ -1,5 +1,7 @@
 package zju.bangdream.ktv.casting.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -10,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -22,6 +25,7 @@ import kotlin.concurrent.thread
 fun CastingControlScreen(
     deviceName: String,
     roomId: Long,
+    baseUrl: String,
     onReset: () -> Unit
 ) {
     val progressState by CastingService.playbackProgress.collectAsState()
@@ -51,6 +55,7 @@ fun CastingControlScreen(
     CastingControlContent(
         deviceName = deviceName,
         roomId = roomId,
+        baseUrl = baseUrl,
         songTitle = songTitle,
         castMode = castMode,
         currentSec = currentSec,
@@ -82,6 +87,7 @@ fun CastingControlScreen(
 fun CastingControlContent(
     deviceName: String,
     roomId: Long,
+    baseUrl: String = "",
     songTitle: String,
     castMode: String = "dlna",
     currentSec: Long,
@@ -94,6 +100,7 @@ fun CastingControlContent(
     onSeek: (Int) -> Unit,
     onReset: () -> Unit
 ) {
+    val context = LocalContext.current
     var isDraggingProgress by remember { mutableStateOf(false) }
     var dragProgressValue by remember { mutableFloatStateOf(0f) }
     var showResetDialog by remember { mutableStateOf(false) }
@@ -182,6 +189,14 @@ fun CastingControlContent(
                 text = "可尝试点击「下一首」，或去网页端确认是否已点歌",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        } else if (queuedCount == 0 && songTitle != "暂无歌曲") {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "队列已空，请去点歌",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
         } else if (queuedCount > 0) {
@@ -281,13 +296,29 @@ fun CastingControlContent(
 
             Button(
                 onClick = onNext,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                enabled = queuedCount != 0
             ) {
                 Text("下一首")
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        if (baseUrl.isNotEmpty()) {
+            val songUrl = baseUrl.trimEnd('/') + "/room?roomId=$roomId"
+            OutlinedButton(
+                onClick = {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(songUrl))
+                    context.startActivity(intent)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("去点歌")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         // --- 音量控制区 (引入外部组件) ---
         VolumeControlGroup(castMode = castMode)
