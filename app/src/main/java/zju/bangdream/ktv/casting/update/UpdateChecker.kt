@@ -6,6 +6,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
+import zju.bangdream.ktv.casting.BuildConfig
 import java.net.ProxySelector
 import java.time.Instant
 import java.util.concurrent.TimeUnit
@@ -98,6 +99,8 @@ class UpdateChecker(private val context: Context) {
     }
 
     fun shouldUpdate(releaseInfo: ReleaseInfo): Boolean {
+        // 如果 release tag 以当前安装版本号开头，则不是新版本
+        if (releaseInfo.tagName.startsWith(BuildConfig.VERSION_NAME)) return false
         val lastReleaseTime = prefs.getLong("last_release_time", 0L)
         return releaseInfo.publishedAt > lastReleaseTime
     }
