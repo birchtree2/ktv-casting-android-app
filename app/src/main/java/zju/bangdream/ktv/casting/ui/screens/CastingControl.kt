@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import zju.bangdream.ktv.casting.CastingService
 import zju.bangdream.ktv.casting.RustEngine
+import zju.bangdream.ktv.casting.ui.components.BilibiliExtraControls
 import zju.bangdream.ktv.casting.ui.components.VolumeControlGroup
 import kotlin.concurrent.thread
 
@@ -322,6 +323,11 @@ fun CastingControlContent(
 
         // --- 音量控制区 (引入外部组件) ---
         VolumeControlGroup(castMode = castMode)
+
+        if (castMode == "bilibili") {
+            Spacer(modifier = Modifier.height(12.dp))
+            BilibiliExtraControls()
+        }
 
         Spacer(modifier = Modifier.height(56.dp))
 

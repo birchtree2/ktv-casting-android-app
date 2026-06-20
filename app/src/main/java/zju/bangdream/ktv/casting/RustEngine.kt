@@ -81,6 +81,30 @@ object RustEngine {
     external fun volumeDown(step: Int): Int
 
     /**
+     * 切换弹幕开关（仅B站投屏支持）。
+     * @return 1=已开启，0=已关闭，-1=失败（如当前是 DLNA 模式）
+     */
+    external fun toggleDanmaku(): Int
+
+    /**
+     * 直接设置弹幕开关（供开关类 UI 使用）。
+     * @return 1=已开启，0=已关闭，-1=失败（如当前是 DLNA 模式）
+     */
+    external fun setDanmaku(on: Boolean): Int
+
+    /** 本地跟踪的弹幕状态（设备侧无读回接口），仅B站投屏有意义 */
+    external fun getDanmakuState(): Boolean
+
+    /**
+     * 设置清晰度（仅B站投屏支持）。qn 是 B 站协议常量，见 [BiliQuality]。
+     * @return 设置后的 qn，失败（含非法 qn 或当前是 DLNA 模式）返回 -1
+     */
+    external fun setQuality(qn: Int): Int
+
+    /** 本地跟踪的清晰度 qn（设备侧无读回接口），仅B站投屏有意义 */
+    external fun getQuality(): Int
+
+    /**
      * @return 音量，-1 为失败
      */
     external fun jumpToSecs(target: Int): Int
@@ -123,4 +147,21 @@ object RustEngine {
 
     /** 清除保存的 B 站 session；true 表示成功 */
     external fun clearBilibiliSession(): Boolean
+}
+
+/**
+ * 与 Rust 侧 cast::Quality 对应。qn 是 B 站 `/x/tv/stream/cmd` 接口本身的协议常量，
+ * 不是我们自定义的格式；跨 JNI 边界仍传裸 Int，这个 enum 只在 Kotlin 这一侧做类型安全。
+ */
+enum class BiliQuality(val qn: Int, val label: String) {
+    P360(16, "360P"),
+    P480(32, "480P"),
+    P720(64, "720P"),
+    P1080(80, "1080P"),
+    P1080P60(116, "1080P60");
+
+    companion object {
+        val DEFAULT = P1080
+        fun fromQn(qn: Int): BiliQuality? = entries.find { it.qn == qn }
+    }
 }
