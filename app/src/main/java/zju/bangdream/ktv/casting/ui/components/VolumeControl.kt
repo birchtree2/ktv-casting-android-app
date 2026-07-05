@@ -2,6 +2,7 @@ package zju.bangdream.ktv.casting.ui.components
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,7 +19,8 @@ import zju.bangdream.ktv.casting.RustEngine
 import kotlin.concurrent.thread
 
 private const val VOLUME_STEP = 5
-private val VolumeStepButtonSize = 56.dp
+private val VolumeStepButtonWidth = 64.dp
+private val VolumeStepButtonHeight = 48.dp
 
 @Composable
 fun VolumeControlGroup(castMode: String = "dlna") {
@@ -38,24 +40,26 @@ private fun BilibiliVolumeControl() {
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         Text(text = "设备音量（小电视模式）", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
         Row(
-            modifier = Modifier.fillMaxWidth().height(64.dp),
+            modifier = Modifier.fillMaxWidth().height(56.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             VolumeStepButton(label = "-", onClick = { thread { RustEngine.volumeDown(VOLUME_STEP) } })
 
             Surface(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).height(VolumeStepButtonHeight),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                shape = MaterialTheme.shapes.small
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text(
-                    text = "使用两侧 - / + 调节",
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "用两侧 - / + 调节",
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
 
             VolumeStepButton(label = "+", onClick = { thread { RustEngine.volumeUp(VOLUME_STEP) } })
@@ -103,9 +107,9 @@ private fun DlnaVolumeControl() {
         }
 
         Row(
-            modifier = Modifier.fillMaxWidth().height(64.dp),
+            modifier = Modifier.fillMaxWidth().height(56.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             VolumeStepButton(label = "-", onClick = { commitVolume(volumeValue - VOLUME_STEP) })
 
@@ -145,7 +149,8 @@ private fun DlnaVolumeControl() {
 private fun VolumeStepButton(label: String, onClick: () -> Unit) {
     Button(
         onClick = onClick,
-        modifier = Modifier.size(VolumeStepButtonSize),
+        modifier = Modifier.width(VolumeStepButtonWidth).height(VolumeStepButtonHeight),
+        shape = RoundedCornerShape(12.dp),
         contentPadding = PaddingValues(0.dp)
     ) {
         Text(

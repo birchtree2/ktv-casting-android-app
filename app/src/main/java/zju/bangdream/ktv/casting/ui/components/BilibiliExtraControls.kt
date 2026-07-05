@@ -6,6 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -48,19 +49,39 @@ fun BilibiliExtraControls() {
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(text = "清晰度", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            BiliQuality.entries.forEach { option ->
-                FilterChip(
-                    selected = quality == option,
-                    onClick = {
-                        quality = option
-                        thread { RustEngine.setQuality(option.qn) }
-                    },
-                    label = { Text(option.label) }
-                )
+            BiliQuality.entries.chunked(3).forEach { rowOptions ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    repeat(3) { index ->
+                        val option = rowOptions.getOrNull(index)
+                        if (option == null) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        } else {
+                            FilterChip(
+                                selected = quality == option,
+                                onClick = {
+                                    quality = option
+                                    thread { RustEngine.setQuality(option.qn) }
+                                },
+                                modifier = Modifier.weight(1f),
+                                label = {
+                                    Text(
+                                        text = option.label,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 1
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
             }
         }
     }

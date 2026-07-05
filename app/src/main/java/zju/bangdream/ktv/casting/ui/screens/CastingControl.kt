@@ -183,7 +183,7 @@ fun CastingControlContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(25.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // 歌曲标题：大字显示
         Text(
@@ -248,7 +248,7 @@ fun CastingControlContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         // --- 进度控制区 ---
         Slider(
@@ -287,7 +287,7 @@ fun CastingControlContent(
             Text(text = formatTime(totalSec), style = MaterialTheme.typography.bodySmall)
         }
 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         // --- 主控按钮区 ---
         Row(
