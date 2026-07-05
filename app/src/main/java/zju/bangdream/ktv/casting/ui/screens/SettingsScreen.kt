@@ -288,7 +288,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenLogs: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
-                        onClick = { uriHandler.openUri("https://github.com/StarFreedomX/ktv-casting/tree/android-app") }
+                        onClick = { uriHandler.openUri("https://github.com/birchtree2/ktv-casting-android-app") }
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_github_logo),

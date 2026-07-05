@@ -41,6 +41,9 @@ fun CastingControlScreen(
     var queuedCount by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(songTitle) {
+        if (songTitle != "正在加载..." && songTitle != "暂无歌曲" && songTitle != "已停止") {
+            isPlaying = true
+        }
         if (isSwitchingSong && songTitle != switchingFromTitle) {
             isSwitchingSong = false
         }
@@ -66,11 +69,14 @@ fun CastingControlScreen(
         queuedCount = queuedCount,
         onTogglePause = {
             val result = RustEngine.togglePause()
-            isPlaying = (result == 1)
+            if (result == 0 || result == 1) {
+                isPlaying = (result == 1)
+            }
         },
         onNext = {
             switchingFromTitle = songTitle
             isSwitchingSong = true
+            isPlaying = true
             RustEngine.nextSong()
         },
         onSeek = { target ->
