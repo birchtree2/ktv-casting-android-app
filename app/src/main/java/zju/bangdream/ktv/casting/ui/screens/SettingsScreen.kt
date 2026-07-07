@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -20,16 +21,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.json.JSONArray
 import zju.bangdream.ktv.casting.R
 import zju.bangdream.ktv.casting.update.UpdateChecker
 import zju.bangdream.ktv.casting.update.UpdateDialog
+import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -274,11 +282,9 @@ fun SettingsScreen(onBack: () -> Unit, onOpenLogs: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 32.dp),
-                    thickness = 0.5.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-                )
+                RepoLinksSection(onOpen = uriHandler::openUri)
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Row(
                     modifier = Modifier
@@ -316,6 +322,215 @@ fun SettingsScreen(onBack: () -> Unit, onOpenLogs: () -> Unit) {
         }
     }
 }
+
+private data class RepoInfo(
+    val name: String,
+    val repoUrl: String,
+    val contributorsUrl: String,
+    val owner: String,
+    val repo: String
+)
+
+private data class ContributorInfo(
+    val login: String,
+    val profileUrl: String
+)
+
+private sealed interface ContributorsUiState {
+    data object Loading : ContributorsUiState
+    data class Success(val contributors: List<ContributorInfo>) : ContributorsUiState
+    data object Error : ContributorsUiState
+}
+
+private val contributorsClient: OkHttpClient by lazy {
+    OkHttpClient.Builder()
+        .connectTimeout(5, TimeUnit.SECONDS)
+        .readTimeout(5, TimeUnit.SECONDS)
+        .build()
+}
+
+private val projectRepos = listOf(
+    RepoInfo(
+        name = "ktv-casting-android-app",
+        repoUrl = "https://github.com/birchtree2/ktv-casting-android-app",
+        contributorsUrl = "https://github.com/birchtree2/ktv-casting-android-app/graphs/contributors",
+        owner = "birchtree2",
+        repo = "ktv-casting-android-app"
+    ),
+    RepoInfo(
+        name = "ktv-casting",
+        repoUrl = "https://github.com/KARAOKE-MASTER-ZJU/ktv-casting",
+        contributorsUrl = "https://github.com/KARAOKE-MASTER-ZJU/ktv-casting/graphs/contributors",
+        owner = "KARAOKE-MASTER-ZJU",
+        repo = "ktv-casting"
+    )
+)
+
+@Composable
+private fun RepoLinksSection(onOpen: (String) -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Text(
+            text = "项目与贡献者",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        projectRepos.forEach { repo ->
+            RepoContributorsCard(repo = repo, onOpen = onOpen)
+        }
+    }
+}
+
+@Composable
+private fun RepoContributorsCard(
+    repo: RepoInfo,
+    onOpen: (String) -> Unit
+) {
+    var state by remember(repo.owner, repo.repo) {
+        mutableStateOf<ContributorsUiState>(ContributorsUiState.Loading)
+    }
+
+    LaunchedEffect(repo.owner, repo.repo) {
+        state = try {
+            ContributorsUiState.Success(fetchRepoContributors(repo.owner, repo.repo))
+        } catch (_: Exception) {
+            ContributorsUiState.Error
+        }
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = repo.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = { onOpen(repo.repoUrl) }) {
+                        Text("仓库")
+                    }
+                    TextButton(onClick = { onOpen(repo.contributorsUrl) }) {
+                        Text("贡献者")
+                    }
+                }
+            }
+
+            when (val current = state) {
+                ContributorsUiState.Loading -> {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(14.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Text(
+                            text = "正在加载贡献者…",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                ContributorsUiState.Error -> {
+                    Text(
+                        text = "暂时无法加载贡献者列表",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
+                is ContributorsUiState.Success -> {
+                    ContributorsWrapRow(
+                        contributors = current.contributors,
+                        onOpen = onOpen
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ContributorsWrapRow(
+    contributors: List<ContributorInfo>,
+    onOpen: (String) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        contributors.chunked(3).forEach { rowContributors ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                rowContributors.forEach { contributor ->
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onOpen(contributor.profileUrl) },
+                        shape = MaterialTheme.shapes.small,
+                        tonalElevation = 1.dp,
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        Text(
+                            text = contributor.login,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                repeat(3 - rowContributors.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+private suspend fun fetchRepoContributors(owner: String, repo: String): List<ContributorInfo> =
+    withContext(Dispatchers.IO) {
+        val request = Request.Builder()
+            .url("https://api.github.com/repos/$owner/$repo/contributors?per_page=30")
+            .addHeader("Accept", "application/vnd.github+json")
+            .addHeader("User-Agent", "KTV-Casting-Android")
+            .build()
+
+        contributorsClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) error("contributors request failed")
+            val body = response.body?.string() ?: error("empty contributors response")
+            val json = JSONArray(body)
+            buildList {
+                for (index in 0 until json.length()) {
+                    val item = json.getJSONObject(index)
+                    add(
+                        ContributorInfo(
+                            login = item.optString("login", ""),
+                            profileUrl = item.optString("html_url", "")
+                        )
+                    )
+                }
+            }.filter { it.login.isNotBlank() && it.profileUrl.isNotBlank() }
+        }
+    }
 
 private fun checkNotificationPermission(context: Context): Boolean {
     return NotificationManagerCompat.from(context).areNotificationsEnabled()
