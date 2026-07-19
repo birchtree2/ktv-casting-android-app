@@ -1,3 +1,20 @@
+# 触发方式：
+#   1. push v* tag          // 自动构建发布
+#   2. workflow_dispatch    // 手动触发，需输入版本号
+#   3. push master 分支      // 仅构建，不发布
+#
+# 需在仓库 Settings → Secrets and variables → Actions 中配置：
+#   Secrets:
+#     SIGNING_KEY          — base64 编码的签名密钥文件
+#     KEY_STORE_PASSWORD   — 密钥库密码
+#     ALIAS                — 密钥别名
+#     KEY_PASSWORD         — 密钥密码
+#   Variables（可选）:
+#     CUSTOM_RUST_REPO     — 自定义 Rust .so 下载仓库（默认 KARAOKE-MASTER-ZJU/ktv-casting）
+#
+# 需在仓库 Settings → Pages 中启用 gh-pages 分支，
+# 构建后自动推送 release.json。
+
 name: Build and Release Signed APK
 
 permissions:
@@ -5,10 +22,17 @@ permissions:
 
 on:
   push:
+    branches:
+      - master
     tags:
-      - 'v*'
-  repository_dispatch:
-    types: [rust-lib-updated]
+      - 'v*' # 触发标签，例如 v1.0.0
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号'
+        required: true
+        type: string
+        default: 'v1.0.0'
 
 jobs:
   release-apk:
@@ -24,54 +48,26 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # 只在 tag push (v*) 或 repository_dispatch 时执行，其他 push 提前退出
-          EVENT_NAME="${{ github.event_name }}"
-          REF="${{ github.ref }}"
+          # 从 gradle.properties 读取 Rust 库版本
+          RUST_TAG=$(grep "rust_libs_version" gradle.properties | cut -d'=' -f2 | xargs)
 
-          if [ "$EVENT_NAME" = "push" ] && [[ "$REF" != refs/tags/v* ]]; then
-            echo "⚠️ Skipping build: Only triggered by tag push (v*) or repository_dispatch"
-            echo "Current trigger: $EVENT_NAME on $REF"
-            exit 0
-          fi
-
-          # 获取当前代码的 Git 短哈希 (前 7 位)
-          SHORT_SHA=$(git rev-parse --short HEAD)
-
-          if [ "$EVENT_NAME" = "repository_dispatch" ]; then
-            # ===== 场景 A：Rust库更新自动触发 =====
-            
-            # 1. 获取 Rust 库版本
-            RUST_TAG="${{ github.event.client_payload.version }}"
-            echo "Client Payload Version: $RUST_TAG"
-            if [ -z "$RUST_TAG" ] || [ "$RUST_TAG" == "null" ]; then
-              RUST_TAG=$(gh release view --repo birchtree2/ktv-casting --json tagName -q .tagName)
-            fi
-            
-            # 2. 获取 App 代码版本
-            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "master")
-            APP_CODE_VERSION="${LATEST_TAG}-${SHORT_SHA}"
-            
+          # 判断触发方式：手动触发优先使用输入的版本号，否则使用 tag 名
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            # 手动触发：使用输入的版本号
+            APP_CODE_VERSION="${{ github.event.inputs.version }}"
+            echo "手动触发，使用指定版本号: $APP_CODE_VERSION"
           else
-            # ===== 场景 B：App 仓库手动推 Tag (v*) 触发 =====
-            
-            # 1. 获取 Rust 库版本 (从本地 gradle.properties 读取)
-            RUST_TAG=$(grep "rust_libs_version" gradle.properties | cut -d'=' -f2 | xargs)
-            
-            # 2. 获取 App 代码版本 (当前推送的 Tag + 短哈希)
-            APP_CODE_VERSION="${{ github.ref_name }}-${SHORT_SHA}"
+            # push/tag 触发：使用 tag 名
+            APP_CODE_VERSION="${{ github.ref_name }}"
+            echo "自动触发，使用 tag 名: $APP_CODE_VERSION"
           fi
-          
-          # 组合最终的 Release 标签 
-          FINAL_RELEASE_TAG="${APP_CODE_VERSION}_rust-${RUST_TAG}-umi"
-          
+
           # 写入环境变量
           echo "RUST_TAG=$RUST_TAG" >> $GITHUB_ENV
           echo "APP_CODE_VERSION=$APP_CODE_VERSION" >> $GITHUB_ENV
-          echo "FINAL_RELEASE_TAG=$FINAL_RELEASE_TAG" >> $GITHUB_ENV
-          
-          echo "✅ RUST库版本: $RUST_TAG"
-          echo "✅ APP代码版本: $APP_CODE_VERSION"
-          echo "🚀 最终生成的 Release 标签: $FINAL_RELEASE_TAG"
+
+          echo "✅ APP代码版本(最终Release版本号): $APP_CODE_VERSION"
+          echo "✅ 依赖的自有RUST库版本: $RUST_TAG"
 
       # 2. 设置 JDK 环境
       - name: Set up JDK 17
@@ -85,20 +81,22 @@ jobs:
       - name: Fetch Rust Binaries
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ENV_CUSTOM_REPO: ${{ vars.CUSTOM_RUST_REPO }} # 可选环境变量，允许覆盖默认仓库地址
         run: |
           ABIS=("arm64-v8a" "armeabi-v7a" "x86_64" "x86")
+          RUST_REPO="${ENV_CUSTOM_REPO:-KARAOKE-MASTER-ZJU/ktv-casting}"
           for ABI in "${ABIS[@]}"; do
             TARGET_DIR="app/src/main/jniLibs/$ABI"
             mkdir -p "$TARGET_DIR"
-            
+          
             echo "正在下载 $ABI 架构的动态库..."
-            # 修复：使用 --dir 代替 --output，避开 gh cli 限制
+            # 使用 gradle.properties 中声明的版本
             gh release download ${{ env.RUST_TAG }} \
-              --repo birchtree2/ktv-casting \
+              --repo "$RUST_REPO" \
               --pattern "libktv_casting_lib-$ABI.so" \
               --dir "$TARGET_DIR"
-              
-            # 修复：下载后重命名，去掉名字里的架构后缀，使其符合 Android JNI 规范
+          
+            # 下载后重命名，去掉名字里的架构后缀，使其符合 Android JNI 规范
             mv "$TARGET_DIR/libktv_casting_lib-$ABI.so" "$TARGET_DIR/libktv_casting_lib.so"
           done
 
@@ -114,29 +112,22 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           chmod +x gradlew
-          # 注意：如果你的打包命令不是自定义的 packRelease，请改为 assembleRelease
           ./gradlew assembleRelease \
           -Pandroid.injected.signing.store.file="$GITHUB_WORKSPACE/app/release.jks" \
           -Pandroid.injected.signing.store.password="$STORE_PASSWORD" \
           -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
           -Pandroid.injected.signing.key.password="$KEY_PASSWORD" \
           -Papp_version_name="${{ env.APP_CODE_VERSION }}"
-          
+
       # 6. 生成更新日志
       - name: Generate Changelog
-        id: changelog
         run: |
-          if [ "${{ github.event_name }}" == "repository_dispatch" ]; then
-            LATEST_APP_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-            if [ -n "$LATEST_APP_TAG" ]; then
-              APP_COMMITS=$(git log --pretty=format:"- %s" "$LATEST_APP_TAG"..HEAD)
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+            if [ -n "$PREV_TAG" ]; then
+              NOTES=$(git log --pretty=format:"- %s" "$PREV_TAG"..HEAD)
             else
-              APP_COMMITS=$(git log --pretty=format:"- %s" -10)
-            fi
-            if [ -n "$APP_COMMITS" ]; then
-              printf -v NOTES "更新 Rust 引擎至 %s\n\nApp 端新增提交:\n%s" "$RUST_TAG" "$APP_COMMITS"
-            else
-              NOTES="更新 Rust 引擎至 $RUST_TAG"
+              NOTES=$(git log --pretty=format:"- %s" -20)
             fi
           else
             PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
@@ -152,10 +143,10 @@ jobs:
 
       # 7. 创建 GitHub Release
       - name: Create Release
-        id: release
         uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         with:
-          tag_name: ${{ env.FINAL_RELEASE_TAG }}
+          tag_name: ${{ env.APP_CODE_VERSION }}
           files: app/build/outputs/apk/release/*.apk
           body: |
             App 版本: ${{ env.APP_CODE_VERSION }}
@@ -164,33 +155,23 @@ jobs:
             更新内容:
             ${{ env.NOTES }}
 
-      # 8. 生成 release.json（完整的 Release 信息）
+      # 8. 生成 release.json（供应用内更新检查使用）
       - name: Generate release.json
-        id: release-json
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # 获取完整的 Release 信息（与 GitHub API 格式一致）
-          RELEASE_JSON=$(gh release view ${{ env.FINAL_RELEASE_TAG }} --repo ${{ github.repository }} --json tagName,publishedAt,body,assets)
-
-          echo "✅ Release Info:"
-          echo "$RELEASE_JSON" | jq .
-
-          # 创建 release.json（保存在 /tmp 避免被覆盖）
+          RELEASE_JSON=$(gh release view ${{ env.APP_CODE_VERSION }} --repo ${{ github.repository }} --json tagName,publishedAt,body,assets)
           mkdir -p /tmp/pages
-          echo "$RELEASE_JSON" | jq '
-          {
+          echo "$RELEASE_JSON" | jq '{
             tag_name: .tagName,
             published_at: .publishedAt,
             body: .body,
-            html_url: "https://github.com/${{ github.repository }}/releases/tag/${{ env.FINAL_RELEASE_TAG }}",
+            html_url: "https://github.com/${{ github.repository }}/releases/tag/${{ env.APP_CODE_VERSION }}",
             assets: .assets | map({
               name: .name,
               browser_download_url: .url
             })
           }' > /tmp/pages/release.json
-
-          cat /tmp/pages/release.json
 
       # 9. Checkout gh-pages 分支
       - name: Checkout gh-pages branch
@@ -199,15 +180,12 @@ jobs:
           ref: gh-pages
           fetch-depth: 1
 
-      # 10. 更新 release.json 并推送到 GitHub Pages
+      # 10. 推送 release.json 到 gh-pages
       - name: Update and push release.json
         run: |
-          # 复制生成的 release.json
           cp /tmp/pages/release.json .
-
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
           git add release.json
           git commit -m "chore: update release info - ${{ env.APP_CODE_VERSION }}" || echo "No changes to commit"
           git push origin gh-pages
