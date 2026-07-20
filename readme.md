@@ -2,9 +2,9 @@
 
 ---
 
-本项目是 [ktv-casting](https://github.com/aspromise/ktv-casting) 的安卓前端
+本项目是 [ktv-casting](https://github.com/KARAOKE-MASTER-ZJU/ktv-casting) 的安卓前端
 
-目前采用的分支为 [android-app](https://github.com/StarFreedomX/ktv-casting/tree/android-app) 分支
+目前采用的分支为 [android-app](https://github.com/KARAOKE-MASTER-ZJU/ktv-casting/tree/android-app) 分支
 
 ## 环境配置
 
