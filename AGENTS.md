@@ -6,6 +6,17 @@ This is a single-module Android project. Kotlin source lives under `app/src/main
 
 Native Rust artifacts belong in `app/src/main/jniLibs/<abi>/libktv_casting_lib.so`. Unit tests live in `app/src/test`; instrumented tests live in `app/src/androidTest`.
 
+## Fork Configuration
+
+Repository identity (GitHub owner/name) is read at build time from `app/local.properties`, which is gitignored. Forks should copy `app/local.properties.example` to `app/local.properties` and set their own values:
+
+```properties
+repo_owner=your_user_name
+repo_name=your_repo_name
+```
+
+These values are injected as `BuildConfig.GITHUB_REPO_OWNER` / `GITHUB_REPO_NAME` and used by the in-app update checker and repository links. If `local.properties` is absent, the build falls back to `KARAOKE-MASTER-ZJU` / `ktv-casting-android-app`.
+
 ## Build, Test, and Development Commands
 
 - `./gradlew assembleDebug`: build a debug APK for local installation.
@@ -26,7 +37,16 @@ Use 4-space indentation for Kotlin and Gradle Kotlin DSL files. Keep dependency 
 
 Use JUnit 4 in `app/src/test/java`. Use AndroidX Test, Espresso, and Compose UI tests in `app/src/androidTest/java`. Name tests after behavior, such as `queueEmpty_disablesNextButton`.
 
-This repository is verified through GitHub Actions rather than local Gradle. Before tagging, ensure `gradle.properties` manually sets `rust_libs_version` to the latest `birchtree2/ktv-casting` release. Release tags must follow Semantic Versioning in `vMAJOR.MINOR.PATCH` form, for example `v1.6.9`. Push commits, create and push a `v*` tag, then monitor with `gh run list --limit 5` and `gh run watch <run-id>`. Plain branch pushes may not start a run.
+This repository is verified through GitHub Actions rather than local Gradle. Before tagging, ensure `gradle.properties` manually sets `rust_libs_version` to the latest Rust release. Release tags must follow Semantic Versioning in `vMAJOR.MINOR.PATCH` form, for example `v1.6.9`. Push commits, create and push a `v*` tag, then monitor with `gh run list --limit 5` and `gh run watch <run-id>`. Plain branch pushes may not start a run.
+
+The CI workflow (`.github/workflows/build-and-release.yml`) handles:
+- Auto-build on `v*` tag push
+- Manual trigger via `workflow_dispatch` (requires version input)
+- Branch push to `master` builds but does not create a release
+- Changelog generation from git history between tags
+- `release.json` pushed to `gh-pages` for in-app update checks
+
+CI secrets required: `SIGNING_KEY`, `KEY_STORE_PASSWORD`, `ALIAS`, `KEY_PASSWORD`. Optional variable: `CUSTOM_RUST_REPO` to override the Rust `.so` download repo.
 
 ## Commit & Pull Request Guidelines
 

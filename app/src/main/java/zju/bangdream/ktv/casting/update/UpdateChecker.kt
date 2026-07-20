@@ -3,11 +3,16 @@ package zju.bangdream.ktv.casting.update
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import zju.bangdream.ktv.casting.BuildConfig
+import zju.bangdream.ktv.casting.LogLevel
+import zju.bangdream.ktv.casting.RustEngine
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 import java.net.ProxySelector
-import java.time.Instant
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 
 data class ReleaseInfo(
@@ -29,7 +34,7 @@ class UpdateChecker(private val context: Context) {
                 .readTimeout(5, TimeUnit.SECONDS)
                 .build()
         } catch (e: Exception) {
-            android.util.Log.e("UpdateChecker", "Failed to create OkHttpClient: ${e.message}")
+            RustEngine.logFromKotlin("UpdateChecker", "创建 OkHttpClient 失败: ${e.message}", LogLevel.ERROR)
             throw e
         }
     }
@@ -38,28 +43,33 @@ class UpdateChecker(private val context: Context) {
         try {
             fetchUpdateFromGitHubPages()
         } catch (e: Exception) {
-            android.util.Log.d("UpdateChecker", "Failed to fetch update info from GitHub Pages: ${e.message}")
+            RustEngine.logFromKotlin("UpdateChecker", "获取更新信息失败: ${e.message}", LogLevel.DEBUG)
             null
         }
     }
 
     private fun fetchUpdateFromGitHubPages(): ReleaseInfo? {
-        val updateUrl = "https://birchtree2.github.io/ktv-casting-android-app/release.json"
+        val updateUrl = "https://${BuildConfig.GITHUB_REPO_OWNER}.github.io/${BuildConfig.GITHUB_REPO_NAME}/release.json"
+        RustEngine.logFromKotlin("UpdateChecker", "检查更新: 仓库=${BuildConfig.GITHUB_REPO_OWNER}/${BuildConfig.GITHUB_REPO_NAME} URL=$updateUrl", LogLevel.INFO)
         val request = Request.Builder()
             .url(updateUrl)
             .addHeader("User-Agent", "KTV-Casting-Android")
             .build()
 
         val response = httpClient.newCall(request).execute()
+        RustEngine.logFromKotlin("UpdateChecker", "请求结果: code=${response.code} success=${response.isSuccessful}", LogLevel.INFO)
         if (!response.isSuccessful) return null
 
         val body = response.body?.string() ?: return null
+        RustEngine.logFromKotlin("UpdateChecker", "响应内容: ${body.take(200)}", LogLevel.DEBUG)
         val json = JSONObject(body)
 
         val tagName = json.optString("tag_name", "unknown")
         val publishedAtStr = json.optString("published_at", "")
         val publishedAt = try {
-            Instant.parse(publishedAtStr).toEpochMilli()
+            val fmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+            fmt.timeZone = TimeZone.getTimeZone("UTC")
+            fmt.parse(publishedAtStr.replace("Z", "").substringBeforeLast("+").substringBeforeLast("-"))?.time ?: System.currentTimeMillis()
         } catch (e: Exception) {
             System.currentTimeMillis()
         }

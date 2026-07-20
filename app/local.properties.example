@@ -1,0 +1,3 @@
+# if you want to change the target repo of the app, copy this file, rename as 'local.properties', and change the following settings
+repo_owner=your_user_name
+repo_name=your_repo_name

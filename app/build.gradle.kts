@@ -1,11 +1,22 @@
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
+
+val localProps = Properties()
+val localFile = file("local.properties")
+if (localFile.exists()) localProps.load(localFile.inputStream())
+val repoOwner = project.findProperty("repo_owner") as String?
+    ?: localProps.getProperty("repo_owner")
+    ?: "KARAOKE-MASTER-ZJU"
+val repoName = project.findProperty("repo_name") as String?
+    ?: localProps.getProperty("repo_name")
+    ?: "ktv-casting-android-app"
 
 android {
     namespace = "zju.bangdream.ktv.casting"
@@ -23,6 +34,9 @@ android {
         versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "GITHUB_REPO_OWNER", "\"$repoOwner\"")
+        buildConfigField("String", "GITHUB_REPO_NAME", "\"$repoName\"")
     }
 
     splits {
@@ -56,6 +70,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

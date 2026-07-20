@@ -33,6 +33,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray
+import zju.bangdream.ktv.casting.BuildConfig
 import zju.bangdream.ktv.casting.R
 import zju.bangdream.ktv.casting.update.UpdateChecker
 import zju.bangdream.ktv.casting.update.UpdateDialog
@@ -314,7 +315,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenLogs: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
-                        onClick = { uriHandler.openUri("https://github.com/birchtree2/ktv-casting-android-app") }
+                        onClick = { uriHandler.openUri("https://github.com/${BuildConfig.GITHUB_REPO_OWNER}/${BuildConfig.GITHUB_REPO_NAME}") }
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_github_logo),
@@ -375,9 +376,9 @@ private val contributorsClient: OkHttpClient by lazy {
 private val projectRepos = listOf(
     RepoInfo(
         name = "ktv-casting-android-app",
-        repoUrl = "https://github.com/birchtree2/ktv-casting-android-app",
-        contributorsUrl = "https://github.com/birchtree2/ktv-casting-android-app/graphs/contributors",
-        owner = "birchtree2",
+        repoUrl = "https://github.com/${BuildConfig.GITHUB_REPO_OWNER}/${BuildConfig.GITHUB_REPO_NAME}",
+        contributorsUrl = "https://github.com/${BuildConfig.GITHUB_REPO_OWNER}/${BuildConfig.GITHUB_REPO_NAME}/graphs/contributors",
+        owner = BuildConfig.GITHUB_REPO_OWNER,
         repo = "ktv-casting-android-app"
     ),
     RepoInfo(

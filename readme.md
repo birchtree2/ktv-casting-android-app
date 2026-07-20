@@ -6,13 +6,26 @@
 
 目前采用的分支为 [android-app](https://github.com/StarFreedomX/ktv-casting/tree/android-app) 分支
 
+## 环境配置
+
+如果你有构建发布的需求，复制 `app/local.properties.example` 为 `app/local.properties`，填写你的仓库信息：
+
+```properties
+repo_owner=你的GitHub用户名
+repo_name=你的仓库名
+```
+
+未配置时默认使用 `KARAOKE-MASTER-ZJU/ktv-casting-android-app`。
+
+应用内更新检查读取 `https://<repo_owner>.github.io/<repo_name>/release.json`，需在仓库 Settings 中启用 GitHub Pages（source 选 `gh-pages` 分支），并配置 CI（见 `.github/workflows/build-and-release.yml` 顶部注释）。
+
 ## 环境准备
 
 ---
 
 ```shell
 # 克隆 android-app分支的rust源码
-git clone -b android-app --single-branch https://github.com/StarFreedomX/ktv-casting.git
+git clone -b android-app --single-branch https://github.com/KARAOKE-MASTER-ZJU/ktv-casting.git
 
 cd ktv-casting
 
@@ -37,7 +50,10 @@ cd ..
 
 接下来克隆本项目
 ```shell
-git clone https://github.com/StarFreedomX/ktv-casting-android-app.git
+# 主仓库
+git clone https://github.com/KARAOKE-MASTER-ZJU/ktv-casting-android-app.git
+
+# 如果你 fork 了项目，改为你自己的仓库地址，并按上面的 Fork 配置步骤设置 local.properties
 
 cd ktv-casting-android-app
 ```
