@@ -186,6 +186,7 @@ jobs:
         run: |
           if ! git ls-remote --heads origin gh-pages | grep -q gh-pages; then
             git checkout --orphan gh-pages
+            git rm -rf --cached . 2>/dev/null || true
             echo '# GitHub Pages' > README.md
             echo '{"tag_name":"placeholder","published_at":"2026-01-01T00:00:00Z","body":"","html_url":"","assets":[]}' > release.json
             git config user.name "github-actions[bot]"
@@ -193,7 +194,6 @@ jobs:
             git add README.md release.json
             git commit -m "Initial GitHub Pages setup"
             git push origin gh-pages
-            git checkout -
           fi
 
       # 10. Checkout gh-pages 分支
