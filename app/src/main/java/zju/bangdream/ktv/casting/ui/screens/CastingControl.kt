@@ -2,9 +2,8 @@ package zju.bangdream.ktv.casting.ui.screens
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.rememberScrollState
@@ -52,6 +51,7 @@ fun CastingControlScreen(
     var isSwitchingSong by remember { mutableStateOf(false) }
     var switchingFromTitle by remember { mutableStateOf("") }
     var queuedCount by remember { mutableIntStateOf(0) }
+    var sungCount by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(songTitle) {
         if (songTitle != "正在加载..." && songTitle != "暂无歌曲" && songTitle != "已停止") {
@@ -65,6 +65,7 @@ fun CastingControlScreen(
     LaunchedEffect(Unit) {
         while (true) {
             queuedCount = RustEngine.getQueuedSongsCount()
+            sungCount = RustEngine.getSungSongsCount()
             kotlinx.coroutines.delay(1000)
         }
     }
@@ -80,6 +81,7 @@ fun CastingControlScreen(
         isPlaying = isPlaying,
         isSwitchingSong = isSwitchingSong,
         queuedCount = queuedCount,
+        sungCount = sungCount,
         onTogglePause = {
             val result = RustEngine.togglePause()
             if (result == 0 || result == 1) {
@@ -91,6 +93,12 @@ fun CastingControlScreen(
             isSwitchingSong = true
             isPlaying = true
             RustEngine.nextSong()
+        },
+        onPrev = {
+            switchingFromTitle = songTitle
+            isSwitchingSong = true
+            isPlaying = true
+            RustEngine.prevSong()
         },
         onSeek = { target ->
             thread { RustEngine.jumpToSecs(target) }
@@ -118,8 +126,10 @@ fun CastingControlContent(
     isPlaying: Boolean,
     isSwitchingSong: Boolean = false,
     queuedCount: Int = 0,
+    sungCount: Int = 0,
     onTogglePause: () -> Unit,
     onNext: () -> Unit,
+    onPrev: () -> Unit,
     onSeek: (Int) -> Unit,
     onReset: () -> Unit,
     onChangeSettings: (newBaseUrl: String, newRoomId: Long) -> Unit = { _, _ -> },
@@ -504,78 +514,85 @@ fun CastingControlContent(
                 )
             }
 
-            AnimatedVisibility(
-                visible = isSwitchingSong,
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                Surface(
-                    modifier = Modifier.padding(top = 12.dp),
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    shape = MaterialTheme.shapes.small
-                ) {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // --- 进度控制区 ---
+                    Slider(
+                        value = displaySec.toFloat().coerceIn(0f, totalProgress),
+                        onValueChange = {
+                            isDraggingProgress = true
+                            dragProgressValue = it
+                        },
+                        onValueChangeFinished = {
+                            onSeek(dragProgressValue.toInt())
+                            isDraggingProgress = false
+                        },
+                        valueRange = 0f..totalProgress,
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        thumb = {
+                            SliderDefaults.Thumb(
+                                interactionSource = remember { MutableInteractionSource() },
+                                modifier = Modifier
+                                    .size(10.dp) // 声明尺寸
+                                    .offset(y = 2.5.dp), // 如果还有极小偏差，用 offset 比 padding 更专业
+                                thumbSize = DpSize(10.dp, 10.dp),
+                                colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary)
+                            )
+                        },
+                        track = { sliderState ->
+                            SliderDefaults.Track(
+                                sliderState = sliderState,
+                                modifier = Modifier.height(4.dp),
+                                drawStopIndicator = null
+                            )
+                        }
+                    )
+
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(14.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                        Text(
-                            text = "切歌中...",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
+                        Text(text = formatTime(displaySec), style = MaterialTheme.typography.bodySmall)
+                        Text(text = formatTime(totalSec), style = MaterialTheme.typography.bodySmall)
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // --- 进度控制区 ---
-            Slider(
-                value = displaySec.toFloat().coerceIn(0f, totalProgress),
-                onValueChange = {
-                    isDraggingProgress = true
-                    dragProgressValue = it
-                },
-                onValueChangeFinished = {
-                    onSeek(dragProgressValue.toInt())
-                    isDraggingProgress = false
-                },
-                valueRange = 0f..totalProgress,
-                modifier = Modifier
-                    .fillMaxWidth(),
-                thumb = {
-                    SliderDefaults.Thumb(
-                        interactionSource = remember { MutableInteractionSource() },
+                val switchingAlpha by animateFloatAsState(
+                    targetValue = if (isSwitchingSong) 1f else 0f,
+                    label = "switchSongAlpha"
+                )
+                if (switchingAlpha > 0f) {
+                    Surface(
                         modifier = Modifier
-                            .size(10.dp) // 声明尺寸
-                            .offset(y = 2.5.dp), // 如果还有极小偏差，用 offset 比 padding 更专业
-                        thumbSize = DpSize(10.dp, 10.dp),
-                        colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary)
-                    )
-                },
-                track = { sliderState ->
-                    SliderDefaults.Track(
-                        sliderState = sliderState,
-                        modifier = Modifier.height(4.dp),
-                        drawStopIndicator = null
-                    )
+                            .align(Alignment.TopCenter)
+                            .padding(top = 12.dp)
+                            .graphicsLayer { alpha = switchingAlpha },
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        shape = MaterialTheme.shapes.small
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(14.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            Text(
+                                text = "切歌中...",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
                 }
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(text = formatTime(displaySec), style = MaterialTheme.typography.bodySmall)
-                Text(text = formatTime(totalSec), style = MaterialTheme.typography.bodySmall)
             }
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -585,6 +602,13 @@ fun CastingControlContent(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                Button(
+                    onClick = onPrev,
+                    modifier = Modifier.weight(1f),
+                    enabled = sungCount != 0
+                ) {
+                    Text("上一首")
+                }
                 Button(
                     onClick = onTogglePause,
                     modifier = Modifier.weight(1f),
@@ -666,12 +690,13 @@ fun CastingControlPreview() {
         CastingControlContent(
             deviceName = "Preview Device",
             roomId = 8888,
-            castMode = "dlna",
+            castMode = "bilibili",
             currentSec = 45,
             totalSec = 210,
             isPlaying = true,
             onTogglePause = {},
             onNext = {},
+            onPrev = {},
             onSeek = {},
             onReset = {},
             songTitle = "八月のif - Poppin'Party"

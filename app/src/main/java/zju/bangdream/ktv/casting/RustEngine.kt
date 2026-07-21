@@ -50,6 +50,8 @@ object RustEngine {
     // 控制接口：由 KT 决定何时调用
     external fun nextSong()
 
+    external fun prevSong()
+
     // 查询接口：由 KT 轮询获取状态
     external fun queryProgress(): IntArray      // 返回当前秒数
 
@@ -119,6 +121,10 @@ object RustEngine {
      * 获取队列中还有多少首歌未播；-1 表示引擎未初始化
      */
     external fun getQueuedSongsCount(): Int
+    /**
+     * 获取队列中有多少首歌已播；-1 表示引擎未初始化
+     */
+    external fun getSungSongsCount(): Int
 
     // ---- 哔哩哔哩云投屏 ----
 
