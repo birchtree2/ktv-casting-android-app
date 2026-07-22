@@ -1,28 +1,28 @@
 {
-  "tag_name": "v1.6.10-d8873e0_rust-v1.7.0-umi",
-  "published_at": "2026-07-07T05:18:36Z",
-  "body": "App 版本: v1.6.10-d8873e0\nRust 引擎版本: v1.7.0\n\n更新内容:\n- feat: 展示项目贡献者列表\n",
-  "html_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/tag/v1.6.10-d8873e0_rust-v1.7.0-umi",
+  "tag_name": "v1.6.11",
+  "published_at": "2026-07-22T08:27:37Z",
+  "body": "App 版本: v1.6.11\nRust 引擎版本: v1.8.1\n\n更新内容:\n- fix: recover invalid bilibili sessions\n- build: use Rust v1.8.1 Actions release\n- feat: 上一首按钮&切歌进度优化\n- build: 无gh-pages自动创建逻辑修复\n- feat: 更多清晰度选项 fix: 更新rust后端，修复1080P+无效的bug\n- feat: actions自行配置repo\n- Merge pull request #6 from birchtree2/master\n- docs: 更新readme仓库名称\n- fix: 工作流gh release view加入release条件判断\n- Merge branch 'org-master' into fork/birchtree2/master\n- feat: 避免硬编码的仓库名称\n- feat: 确保分支存在\n- feat: 优化发布逻辑\n- feat: 分栏式页面 fix: 初始化引擎先释放，避免系统锁异常 feat: 允许投屏页面更改房间\n- chore: reduce upstream merge conflicts\n- fix: align AGP version with target branch\n- Merge pull request #5 from StarFreedomX/master\n- build: rust库版本v1.3.0\n- fix: 优化发布逻辑\n- feat: url通过搜索接口先搜索\n- feat: 支持手动输入设备地址连接\n- fix: 修正发布逻辑\n- Merge pull request #3 from StarFreedomX/master\n- v1.2.6\n- feat: 分栏式页面 fix: 初始化引擎前先释放，避免系统锁异常\n- feat: 控制界面支持修改设备和房间\n",
+  "html_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/tag/v1.6.11",
   "assets": [
     {
       "name": "app-arm64-v8a-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.6.10-d8873e0_rust-v1.7.0-umi/app-arm64-v8a-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.6.11/app-arm64-v8a-release.apk"
     },
     {
       "name": "app-armeabi-v7a-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.6.10-d8873e0_rust-v1.7.0-umi/app-armeabi-v7a-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.6.11/app-armeabi-v7a-release.apk"
     },
     {
       "name": "app-universal-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.6.10-d8873e0_rust-v1.7.0-umi/app-universal-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.6.11/app-universal-release.apk"
     },
     {
       "name": "app-x86-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.6.10-d8873e0_rust-v1.7.0-umi/app-x86-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.6.11/app-x86-release.apk"
     },
     {
       "name": "app-x86_64-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.6.10-d8873e0_rust-v1.7.0-umi/app-x86_64-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.6.11/app-x86_64-release.apk"
     }
   ]
 }
