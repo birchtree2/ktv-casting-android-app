@@ -54,6 +54,15 @@ class MainActivity : ComponentActivity() {
         if (!savedSession.isNullOrEmpty()) {
             val ok = RustEngine.restoreBilibiliSession(savedSession)
             RustEngine.logFromKotlin("MainActivity", "B站会话恢复: $ok", LogLevel.INFO)
+            if (ok == 0) {
+                prefs.edit().apply {
+                    remove("bilibili_session")
+                    remove("last_bilibili_device")
+                    remove("last_bilibili_buvid")
+                    apply()
+                }
+                RustEngine.logFromKotlin("MainActivity", "已清理无效的 B 站本地会话", LogLevel.WARN)
+            }
         }
 
         // 检查应用更新

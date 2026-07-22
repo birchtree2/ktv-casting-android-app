@@ -83,7 +83,8 @@ fun BilibiliSetupScreen(
     // QR 登录轮询
     LaunchedEffect(retryKey) {
         val current = withContext(Dispatchers.IO) { RustEngine.getBilibiliLoginStatus() }
-        if (current == 1) {
+        // 首次进入时保留已恢复的会话；后续 retryKey 变化表示用户明确要重新拉起扫码流程。
+        if (retryKey == 0 && current == 1) {
             loginStatus = 1
             return@LaunchedEffect
         }
@@ -124,6 +125,21 @@ fun BilibiliSetupScreen(
             isLoadingDevices = true
             devicesError = null
             val json = withContext(Dispatchers.IO) { RustEngine.listBilibiliDevices() }
+            val latestStatus = withContext(Dispatchers.IO) { RustEngine.getBilibiliLoginStatus() }
+            if (latestStatus != 1) {
+                prefs.edit {
+                    remove("bilibili_session")
+                    remove("last_bilibili_device")
+                    remove("last_bilibili_buvid")
+                }
+                devices = emptyList()
+                isLoadingDevices = false
+                loginStatus = -2
+                statusText = "登录已失效，请重新扫码登录"
+                retryKey++
+                return@LaunchedEffect
+            }
+
             val parsed = parseBilibiliDevices(json)
             devices = parsed
             if (parsed.isEmpty()) devicesError =
@@ -287,6 +303,11 @@ fun BilibiliSetupScreen(
                     Button(onClick = {
                         showSwitchAccountDialog = false
                         RustEngine.clearBilibiliSession()
+                        prefs.edit {
+                            remove("bilibili_session")
+                            remove("last_bilibili_device")
+                            remove("last_bilibili_buvid")
+                        }
                         loginStatus = -2
                         statusText = "正在获取二维码..."
                         retryKey++
