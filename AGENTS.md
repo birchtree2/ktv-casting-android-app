@@ -6,6 +6,10 @@ This is a single-module Android project. Kotlin source lives under `app/src/main
 
 Native Rust artifacts belong in `app/src/main/jniLibs/<abi>/libktv_casting_lib.so`. Unit tests live in `app/src/test`; instrumented tests live in `app/src/androidTest`.
 
+## Dependent Rust Library
+
+The upstream `ktv-casting` Rust library source lives at `../star/ktv-casting` (local clone of the `android-app` branch). The `.so` is not built locally here — it's downloaded from the Rust repo's GitHub release during CI. See the Rust repo's `CLAUDE.md` for JNI/build details and the version-linking rule (`rust_libs_version` in `gradle.properties` must match the Rust repo's release tag).
+
 ## Fork Configuration
 
 Repository identity (GitHub owner/name) is read at build time from `app/local.properties`, which is gitignored. Forks should copy `app/local.properties.example` to `app/local.properties` and set their own values:
@@ -37,7 +41,14 @@ Use 4-space indentation for Kotlin and Gradle Kotlin DSL files. Keep dependency 
 
 Use JUnit 4 in `app/src/test/java`. Use AndroidX Test, Espresso, and Compose UI tests in `app/src/androidTest/java`. Name tests after behavior, such as `queueEmpty_disablesNextButton`.
 
-This repository is verified through GitHub Actions rather than local Gradle. Before tagging, ensure `gradle.properties` manually sets `rust_libs_version` to the latest Rust release. Release tags must follow Semantic Versioning in `vMAJOR.MINOR.PATCH` form, for example `v1.6.9`. Push commits, create and push a `v*` tag, then monitor with `gh run list --limit 5` and `gh run watch <run-id>`. Plain branch pushes may not start a run.
+This repository is verified through GitHub Actions rather than local Gradle. Before tagging, ensure `gradle.properties` manually sets `rust_libs_version` to the intended Rust library version. Push commits, create and push a `v*` tag, then monitor with `gh run list --limit 5` and `gh run watch <run-id>`. Plain branch pushes may not start a run.
+
+## Release & Tag Conventions
+
+开发测试一律在 **fork 仓库**（如 `birchtree2/ktv-casting-android-app`）内进行，不直接在 `KARAOKE-MASTER-ZJU` 主仓库内开发。为避免开发 tag 与主仓库 tag 冲突，按以下规则打 tag：
+
+- **fork / 开发仓库**：release tag 使用 `vA.B.C+dev(.name)(.description)` 形式（SemVer 构建元数据），例如 `v1.6.13+dev.roomid-string`。**dev tag 只推送 fork，不推送主仓库。**
+- **主仓库 `KARAOKE-MASTER-ZJU/ktv-casting-android-app`**：正式发布使用**无元数据**的 SemVer 标准，`vA.B.C` 或 `vA.B.C-alpha`（如 `v1.4.2`、`v1.4.1-alpha.1`），不带 `+dev` 后缀。
 
 The CI workflow (`.github/workflows/build-and-release.yml`) handles:
 - Auto-build on `v*` tag push
