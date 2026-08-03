@@ -28,7 +28,7 @@ private fun normalizeDeviceUrl(input: String): String {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeviceSelectorScreen(
-    onDeviceSelect: (String, Long, DlnaDeviceItem) -> Unit,
+    onDeviceSelect: (String, String, DlnaDeviceItem) -> Unit,
     onBilibiliMode: (baseUrl: String, roomId: String) -> Unit,
 ) {
     val context = LocalContext.current
@@ -262,7 +262,7 @@ fun DeviceSelectorScreen(
                             .padding(vertical = 3.dp)
                             .clickable {
                                 saveSettings()
-                                onDeviceSelect(baseUrl, roomIdStr.toLongOrNull() ?: 0L, device)
+                                onDeviceSelect(baseUrl, roomIdStr, device)
                             },
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {

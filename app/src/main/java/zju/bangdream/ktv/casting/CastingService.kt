@@ -40,7 +40,7 @@ class CastingService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val baseUrl = intent?.getStringExtra("base_url") ?: ""
-        val roomId = intent?.getLongExtra("room_id", 1111L) ?: 1111L
+        val roomId = intent?.getStringExtra("room_id") ?: "1111"
         val mode = intent?.getStringExtra("mode") ?: "dlna"
         val location = intent?.getStringExtra("location") ?: ""
         val buvid = intent?.getStringExtra("buvid") ?: ""
@@ -59,9 +59,9 @@ class CastingService : Service() {
 
         // 2. 初始化 Rust 引擎
         if (mode == "bilibili") {
-            RustEngine.startBilibiliEngine(baseUrl, roomId.toString(), buvid)
+            RustEngine.startBilibiliEngine(baseUrl, roomId, buvid)
         } else {
-            RustEngine.startEngine(baseUrl, roomId.toString(), location)
+            RustEngine.startEngine(baseUrl, roomId, location)
         }
 
         // 3. 开启轮询逻辑

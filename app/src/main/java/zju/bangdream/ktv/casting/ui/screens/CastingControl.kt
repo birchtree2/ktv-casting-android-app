@@ -30,14 +30,15 @@ import zju.bangdream.ktv.casting.ui.components.BilibiliExtraControls
 import zju.bangdream.ktv.casting.ui.components.VolumeControlGroup
 import kotlin.concurrent.thread
 import androidx.core.net.toUri
+import java.net.URLEncoder
 
 @Composable
 fun CastingControlScreen(
     deviceName: String,
-    roomId: Long,
+    roomId: String,
     baseUrl: String,
     onReset: () -> Unit,
-    onChangeSettings: (newBaseUrl: String, newRoomId: Long) -> Unit = { _, _ -> },
+    onChangeSettings: (newBaseUrl: String, newRoomId: String) -> Unit = { _, _ -> },
     onChangeDevice: (newDevice: DlnaDeviceItem) -> Unit = {},
     onChangeToBilibiliDevice: (buvid: String, name: String) -> Unit = { _, _ -> },
 ) {
@@ -117,7 +118,7 @@ fun CastingControlScreen(
 @Composable
 fun CastingControlContent(
     deviceName: String,
-    roomId: Long,
+    roomId: String,
     baseUrl: String = "",
     songTitle: String,
     castMode: String = "dlna",
@@ -132,7 +133,7 @@ fun CastingControlContent(
     onPrev: () -> Unit,
     onSeek: (Int) -> Unit,
     onReset: () -> Unit,
-    onChangeSettings: (newBaseUrl: String, newRoomId: Long) -> Unit = { _, _ -> },
+    onChangeSettings: (newBaseUrl: String, newRoomId: String) -> Unit = { _, _ -> },
     onChangeDevice: (newDevice: DlnaDeviceItem) -> Unit = {},
     onChangeToBilibiliDevice: (buvid: String, name: String) -> Unit = { _, _ -> },
 ) {
@@ -172,7 +173,7 @@ fun CastingControlContent(
     // 修改设置（网址+房间号）对话框
     if (showSettingsDialog) {
         var newBaseUrl by remember { mutableStateOf(baseUrl) }
-        var newRoomId by remember { mutableStateOf(roomId.toString()) }
+        var newRoomId by remember { mutableStateOf(roomId) }
         AlertDialog(
             onDismissRequest = { showSettingsDialog = false },
             title = { Text("修改连接设置") },
@@ -197,7 +198,7 @@ fun CastingControlContent(
             confirmButton = {
                 TextButton(onClick = {
                     showSettingsDialog = false
-                    onChangeSettings(newBaseUrl, newRoomId.toLongOrNull() ?: 0L)
+                    onChangeSettings(newBaseUrl, newRoomId)
                 }) { Text("确定") }
             },
             dismissButton = {
@@ -633,7 +634,7 @@ fun CastingControlContent(
             Spacer(modifier = Modifier.height(12.dp))
 
             if (baseUrl.isNotEmpty()) {
-                val songUrl = baseUrl.trimEnd('/') + "/room?roomId=$roomId"
+                val songUrl = baseUrl.trimEnd('/') + "/room?roomId=" + URLEncoder.encode(roomId, "UTF-8")
                 OutlinedButton(
                     onClick = {
                         val intent = Intent(Intent.ACTION_VIEW, songUrl.toUri())
@@ -689,7 +690,7 @@ fun CastingControlPreview() {
     MaterialTheme(colorScheme = lightColorScheme(primary = Color(0xFFFF3377))) {
         CastingControlContent(
             deviceName = "Preview Device",
-            roomId = 8888,
+            roomId = "8888",
             castMode = "bilibili",
             currentSec = 45,
             totalSec = 210,
