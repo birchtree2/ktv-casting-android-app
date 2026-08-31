@@ -18,14 +18,16 @@ import kotlin.concurrent.thread
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BilibiliExtraControls() {
+fun BilibiliExtraControls(dlnaMode: Boolean = false) {
     var danmakuOn by remember { mutableStateOf(false) }
     var quality by remember { mutableStateOf(BiliQuality.DEFAULT) }
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             danmakuOn = RustEngine.getDanmakuState()
-            quality = BiliQuality.fromQn(RustEngine.getQuality()) ?: BiliQuality.DEFAULT
+            quality = if (dlnaMode) {
+                BiliQuality.fromQn(RustEngine.getDlnaQuality()) ?: BiliQuality.P720
+            } else BiliQuality.fromQn(RustEngine.getQuality()) ?: BiliQuality.DEFAULT
         }
     }
 
@@ -74,13 +76,16 @@ fun BilibiliExtraControls() {
                 onDismissRequest = { qualityMenuExpanded = false },
                 modifier = Modifier.exposedDropdownSize()
             ) {
-                BiliQuality.entries.forEach { option ->
+                (if (dlnaMode) listOf(BiliQuality.P720, BiliQuality.P1080) else BiliQuality.entries).forEach { option ->
                     DropdownMenuItem(
                         text = { Text(option.label) },
                         onClick = {
                             quality = option
                             qualityMenuExpanded = false
-                            thread { RustEngine.setQuality(option.qn) }
+                            thread {
+                                if (dlnaMode) RustEngine.setDlnaQuality(option.qn)
+                                else RustEngine.setQuality(option.qn)
+                            }
                         }
                     )
                 }
