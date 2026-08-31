@@ -17,7 +17,8 @@ object RustEngine {
     }
 
     /**
-     * Rust 侧可通过 JNI 直接调用，用于回传日志。
+     * Rust 侧可从任意 Tokio 工作线程通过 JNI 调用，用于回传日志。
+     * LogRepository 会串行化并发写入，日志页面可直接查看。
      * 签名示例（Rust/Java）：
      *   zju/bangdream/ktv/casting/RustEngine.onRustLog(int, String, String)
      */
