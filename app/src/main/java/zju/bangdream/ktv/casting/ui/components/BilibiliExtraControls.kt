@@ -14,11 +14,11 @@ import zju.bangdream.ktv.casting.RustEngine
 import kotlin.concurrent.thread
 
 /**
- * B站投屏专属控制项：弹幕开关、清晰度选择。DLNA 模式没有对应概念，不展示这个组件。
+ * B站/本地 DLNA 共用清晰度选择；弹幕开关只对 B站投屏有效。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BilibiliExtraControls() {
+fun BilibiliExtraControls(dlnaMode: Boolean = false) {
     var danmakuOn by remember { mutableStateOf(false) }
     var quality by remember { mutableStateOf(BiliQuality.DEFAULT) }
 
@@ -74,7 +74,7 @@ fun BilibiliExtraControls() {
                 onDismissRequest = { qualityMenuExpanded = false },
                 modifier = Modifier.exposedDropdownSize()
             ) {
-                BiliQuality.entries.forEach { option ->
+                (if (dlnaMode) listOf(BiliQuality.P720, BiliQuality.P1080) else BiliQuality.entries).forEach { option ->
                     DropdownMenuItem(
                         text = { Text(option.label) },
                         onClick = {
