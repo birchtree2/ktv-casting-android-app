@@ -107,10 +107,6 @@ object RustEngine {
     /** 本地跟踪的清晰度 qn（设备侧无读回接口），仅B站投屏有意义 */
     external fun getQuality(): Int
 
-    /** DLNA media proxy quality: 64=720P, 80=1080P Beta. */
-    external fun setDlnaQuality(qn: Int): Int
-    external fun getDlnaQuality(): Int
-
     /**
      * @return 音量，-1 为失败
      */
