@@ -14,38 +14,47 @@ import zju.bangdream.ktv.casting.RustEngine
 import kotlin.concurrent.thread
 
 /**
- * B站投屏专属控制项：弹幕开关、清晰度选择。DLNA 模式没有对应概念，不展示这个组件。
+ * 投屏扩展控制：B站模式显示弹幕与全部清晰度，DLNA 模式只显示 720/1080(beta)。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BilibiliExtraControls() {
+fun BilibiliExtraControls(dlnaMode: Boolean = false) {
     var danmakuOn by remember { mutableStateOf(false) }
-    var quality by remember { mutableStateOf(BiliQuality.DEFAULT) }
+    var quality by remember { mutableStateOf(if (dlnaMode) BiliQuality.P720 else BiliQuality.DEFAULT) }
+    val qualityOptions = if (dlnaMode) {
+        listOf(BiliQuality.P720, BiliQuality.P1080)
+    } else {
+        BiliQuality.entries.toList()
+    }
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
-            danmakuOn = RustEngine.getDanmakuState()
-            quality = BiliQuality.fromQn(RustEngine.getQuality()) ?: BiliQuality.DEFAULT
+            if (!dlnaMode) danmakuOn = RustEngine.getDanmakuState()
+            quality = BiliQuality.fromQn(RustEngine.getQuality())
+                ?.takeIf { it in qualityOptions }
+                ?: if (dlnaMode) BiliQuality.P720 else BiliQuality.DEFAULT
         }
     }
 
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(text = "弹幕", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-            Switch(
-                checked = danmakuOn,
-                onCheckedChange = { target ->
-                    danmakuOn = target
-                    thread { RustEngine.setDanmaku(target) }
-                }
-            )
-        }
+        if (!dlnaMode) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(text = "弹幕", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                Switch(
+                    checked = danmakuOn,
+                    onCheckedChange = { target ->
+                        danmakuOn = target
+                        thread { RustEngine.setDanmaku(target) }
+                    }
+                )
+            }
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+        }
 
         Text(text = "清晰度", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
         var qualityMenuExpanded by remember { mutableStateOf(false) }
@@ -57,7 +66,7 @@ fun BilibiliExtraControls() {
                 .padding(top = 4.dp)
         ) {
             OutlinedTextField(
-                value = quality.label,
+                value = if (dlnaMode && quality == BiliQuality.P1080) "1080P (Beta)" else quality.label,
                 onValueChange = {},
                 readOnly = true,
                 singleLine = true,
@@ -74,9 +83,11 @@ fun BilibiliExtraControls() {
                 onDismissRequest = { qualityMenuExpanded = false },
                 modifier = Modifier.exposedDropdownSize()
             ) {
-                BiliQuality.entries.forEach { option ->
+                qualityOptions.forEach { option ->
                     DropdownMenuItem(
-                        text = { Text(option.label) },
+                        text = {
+                            Text(if (dlnaMode && option == BiliQuality.P1080) "1080P (Beta)" else option.label)
+                        },
                         onClick = {
                             quality = option
                             qualityMenuExpanded = false
