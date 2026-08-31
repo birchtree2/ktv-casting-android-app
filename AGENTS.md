@@ -49,6 +49,8 @@ This repository is verified through GitHub Actions rather than local Gradle. Bef
 
 - **fork / 开发仓库**：release tag 使用 `vA.B.C+dev(.name)(.description)` 形式（SemVer 构建元数据），例如 `v1.6.13+dev.roomid-string`。**dev tag 只推送 fork，不推送主仓库。**
 - **主仓库 `KARAOKE-MASTER-ZJU/ktv-casting-android-app`**：正式发布使用**无元数据**的 SemVer 标准，`vA.B.C` 或 `vA.B.C-alpha`（如 `v1.4.2`、`v1.4.1-alpha.1`），不带 `+dev` 后缀。
+- 严格按 Semantic Versioning 递增基础版本：兼容新增功能升 minor，兼容修复升 patch，破坏性变更升 major；`+dev.*` 不能代替基础版本递增。
+- GitHub Release 必须通过推送 `v*` tag 触发。只推 `master` 仅做编译检查，不创建 Release。
 
 The CI workflow (`.github/workflows/build-and-release.yml`) handles:
 - Auto-build on `v*` tag push
@@ -61,7 +63,7 @@ CI secrets required: `SIGNING_KEY`, `KEY_STORE_PASSWORD`, `ALIAS`, `KEY_PASSWORD
 
 ## Commit & Pull Request Guidelines
 
-Commit history uses Conventional Commit-style prefixes: `feat:`, `fix:`, and `chore:`. Keep subjects concise; Chinese or English is acceptable.
+Commit message 必须使用中文，并保持主题简短、准确。可按需使用 `feat:`、`fix:`、`chore:` 等 Conventional Commit 前缀。
 
 Pull requests should include a summary, testing performed, and any device/Android version used. Include screenshots for visible Compose UI changes. Mention Rust `.so`, ABI, update-check, or release packaging changes explicitly.
 
