@@ -6,9 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import android.widget.Toast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import zju.bangdream.ktv.casting.BiliQuality
@@ -16,12 +14,11 @@ import zju.bangdream.ktv.casting.RustEngine
 import kotlin.concurrent.thread
 
 /**
- * B站/本地 DLNA 共用清晰度选择；弹幕开关只对 B站投屏有效。
+ * B站投屏专属控制项：弹幕开关、清晰度选择。DLNA 模式没有对应概念，不展示这个组件。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BilibiliExtraControls(dlnaMode: Boolean = false) {
-    val context = LocalContext.current
+fun BilibiliExtraControls() {
     var danmakuOn by remember { mutableStateOf(false) }
     var quality by remember { mutableStateOf(BiliQuality.DEFAULT) }
 
@@ -77,21 +74,13 @@ fun BilibiliExtraControls(dlnaMode: Boolean = false) {
                 onDismissRequest = { qualityMenuExpanded = false },
                 modifier = Modifier.exposedDropdownSize()
             ) {
-                (if (dlnaMode) listOf(BiliQuality.P720, BiliQuality.P1080) else BiliQuality.entries).forEach { option ->
+                BiliQuality.entries.forEach { option ->
                     DropdownMenuItem(
                         text = { Text(option.label) },
                         onClick = {
                             quality = option
                             qualityMenuExpanded = false
-                            thread {
-                                val result = RustEngine.setQuality(option.qn)
-                                if (dlnaMode && option == BiliQuality.P1080 && result < 0) {
-                                    RustEngine.startBilibiliQrLogin()
-                                    context.mainExecutor.execute {
-                                        Toast.makeText(context, "1080P 需要登录，请进入 B站投屏设置扫码", Toast.LENGTH_LONG).show()
-                                    }
-                                }
-                            }
+                            thread { RustEngine.setQuality(option.qn) }
                         }
                     )
                 }

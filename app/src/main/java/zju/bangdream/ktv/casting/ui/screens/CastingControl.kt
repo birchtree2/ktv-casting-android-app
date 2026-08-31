@@ -651,9 +651,9 @@ fun CastingControlContent(
             // --- 音量控制区 (引入外部组件) ---
             VolumeControlGroup(castMode = castMode)
 
-            if (castMode == "bilibili" || castMode == "dlna") {
+            if (castMode == "bilibili") {
                 Spacer(modifier = Modifier.height(12.dp))
-                BilibiliExtraControls(dlnaMode = castMode == "dlna")
+                BilibiliExtraControls()
             }
 
             Spacer(modifier = Modifier.weight(1f))
