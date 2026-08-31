@@ -6,7 +6,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import android.widget.Toast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import zju.bangdream.ktv.casting.BiliQuality
@@ -19,6 +21,7 @@ import kotlin.concurrent.thread
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BilibiliExtraControls(dlnaMode: Boolean = false) {
+    val context = LocalContext.current
     var danmakuOn by remember { mutableStateOf(false) }
     var quality by remember { mutableStateOf(BiliQuality.DEFAULT) }
 
@@ -80,7 +83,15 @@ fun BilibiliExtraControls(dlnaMode: Boolean = false) {
                         onClick = {
                             quality = option
                             qualityMenuExpanded = false
-                            thread { RustEngine.setQuality(option.qn) }
+                            thread {
+                                val result = RustEngine.setQuality(option.qn)
+                                if (dlnaMode && option == BiliQuality.P1080 && result < 0) {
+                                    RustEngine.startBilibiliQrLogin()
+                                    context.mainExecutor.execute {
+                                        Toast.makeText(context, "1080P 需要登录，请进入 B站投屏设置扫码", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            }
                         }
                     )
                 }
