@@ -1,28 +1,28 @@
 {
-  "tag_name": "v1.7.1+dev.dlna1080-duration",
-  "published_at": "2026-09-01T02:11:43Z",
-  "body": "App 版本: v1.7.1+dev.dlna1080-duration\nRust 引擎版本: v1.8.10+dev.dlna1080-duration\n\n更新内容:\n- 修复DLNA1080P时长与默认清晰度显示\n",
-  "html_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/tag/v1.7.1+dev.dlna1080-duration",
+  "tag_name": "v1.7.2+dev.dlna1080-seek",
+  "published_at": "2026-09-01T02:52:18Z",
+  "body": "App 版本: v1.7.2+dev.dlna1080-seek\nRust 引擎版本: v1.8.11+dev.dlna1080-seek\n\n更新内容:\n- 默认DLNA720P并修复1080P进度控制\n",
+  "html_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/tag/v1.7.2+dev.dlna1080-seek",
   "assets": [
     {
       "name": "app-arm64-v8a-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.7.1%2Bdev.dlna1080-duration/app-arm64-v8a-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.7.2%2Bdev.dlna1080-seek/app-arm64-v8a-release.apk"
     },
     {
       "name": "app-armeabi-v7a-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.7.1%2Bdev.dlna1080-duration/app-armeabi-v7a-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.7.2%2Bdev.dlna1080-seek/app-armeabi-v7a-release.apk"
     },
     {
       "name": "app-universal-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.7.1%2Bdev.dlna1080-duration/app-universal-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.7.2%2Bdev.dlna1080-seek/app-universal-release.apk"
     },
     {
       "name": "app-x86-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.7.1%2Bdev.dlna1080-duration/app-x86-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.7.2%2Bdev.dlna1080-seek/app-x86-release.apk"
     },
     {
       "name": "app-x86_64-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.7.1%2Bdev.dlna1080-duration/app-x86_64-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.7.2%2Bdev.dlna1080-seek/app-x86_64-release.apk"
     }
   ]
 }
