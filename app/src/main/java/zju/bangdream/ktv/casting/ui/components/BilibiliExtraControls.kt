@@ -20,14 +20,16 @@ import kotlin.concurrent.thread
 @Composable
 fun BilibiliExtraControls(dlnaMode: Boolean = false) {
     var danmakuOn by remember { mutableStateOf(false) }
-    var quality by remember { mutableStateOf(if (dlnaMode) BiliQuality.P720 else BiliQuality.DEFAULT) }
+    // 切换投屏模式时必须重建本地状态；否则同一个 Compose slot 会保留
+    // B 站模式的 1080P 选项，虽然 DLNA 实际仍从 720P 开始播放。
+    var quality by remember(dlnaMode) { mutableStateOf(if (dlnaMode) BiliQuality.P720 else BiliQuality.DEFAULT) }
     val qualityOptions = if (dlnaMode) {
         listOf(BiliQuality.P720, BiliQuality.P1080)
     } else {
         BiliQuality.entries.toList()
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(dlnaMode) {
         withContext(Dispatchers.IO) {
             if (!dlnaMode) danmakuOn = RustEngine.getDanmakuState()
             quality = BiliQuality.fromQn(RustEngine.getQuality())
