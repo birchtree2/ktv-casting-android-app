@@ -30,11 +30,18 @@ fun BilibiliExtraControls(dlnaMode: Boolean = false) {
     }
 
     LaunchedEffect(dlnaMode) {
-        withContext(Dispatchers.IO) {
-            if (!dlnaMode) danmakuOn = RustEngine.getDanmakuState()
-            quality = BiliQuality.fromQn(RustEngine.getQuality())
+        if (dlnaMode) {
+            // Rust 每次新建 DLNA 引擎也会重置到 720P。不要读取遗留会话的
+            // 1080P 状态，否则下拉框会在用户尚未选择时错误地显示 1080P。
+            quality = BiliQuality.P720
+        } else {
+            val (currentDanmakuOn, currentQuality) = withContext(Dispatchers.IO) {
+                RustEngine.getDanmakuState() to RustEngine.getQuality()
+            }
+            danmakuOn = currentDanmakuOn
+            quality = BiliQuality.fromQn(currentQuality)
                 ?.takeIf { it in qualityOptions }
-                ?: if (dlnaMode) BiliQuality.P720 else BiliQuality.DEFAULT
+                ?: BiliQuality.DEFAULT
         }
     }
 
