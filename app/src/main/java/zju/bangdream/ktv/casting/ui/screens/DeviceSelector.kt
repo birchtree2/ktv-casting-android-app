@@ -15,13 +15,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import zju.bangdream.ktv.casting.DlnaDeviceItem
 import zju.bangdream.ktv.casting.EnsureRoomResult
 import zju.bangdream.ktv.casting.RoomApi
 import zju.bangdream.ktv.casting.RoomEntryMode
+import zju.bangdream.ktv.casting.RoomExistenceResult
 import zju.bangdream.ktv.casting.RustEngine
 import kotlin.concurrent.thread
+
+private sealed interface RoomCheckState {
+    data object Idle : RoomCheckState
+    data object Checking : RoomCheckState
+    data object Exists : RoomCheckState
+    data object Available : RoomCheckState
+    data class Error(val message: String) : RoomCheckState
+}
 
 private fun normalizeDeviceUrl(input: String): String {
     val trimmed = input.trim()
@@ -38,6 +48,7 @@ fun DeviceSelectorScreen(
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     val prefs = remember { context.getSharedPreferences("ktv_settings", Context.MODE_PRIVATE) }
 
     var baseUrl by remember {
@@ -52,6 +63,8 @@ fun DeviceSelectorScreen(
     var roomEntryMode by remember { mutableStateOf(RoomEntryMode.CREATE) }
     var inputError by remember { mutableStateOf<String?>(null) }
     var isPreparingRoom by remember { mutableStateOf(false) }
+    var roomCheckState by remember { mutableStateOf<RoomCheckState>(RoomCheckState.Idle) }
+    var roomCheckGeneration by remember { mutableIntStateOf(0) }
 
     // DLNA 搜索状态
     var dlnaShowManualInput by remember { mutableStateOf(false) }
@@ -86,6 +99,21 @@ fun DeviceSelectorScreen(
 
     fun prepareRoom(onReady: (baseUrl: String, roomId: String) -> Unit) {
         if (!validateInputs() || isPreparingRoom) return
+        val readinessError = when {
+            roomCheckState == RoomCheckState.Checking || roomCheckState == RoomCheckState.Idle ->
+                "请等待房间号检查完成"
+            roomEntryMode == RoomEntryMode.CREATE && roomCheckState == RoomCheckState.Exists ->
+                "房间号已被占用，请更换房间号或选择加入房间"
+            roomEntryMode == RoomEntryMode.JOIN && roomCheckState == RoomCheckState.Available ->
+                "房间不存在，请先创建房间"
+            roomCheckState is RoomCheckState.Error ->
+                (roomCheckState as RoomCheckState.Error).message
+            else -> null
+        }
+        if (readinessError != null) {
+            coroutineScope.launch { snackbarHostState.showSnackbar(readinessError) }
+            return
+        }
         val requestedBaseUrl = baseUrl.trim()
         val requestedRoomId = roomIdStr.trim().toLong().toString()
         val requestedMode = roomEntryMode
@@ -104,7 +132,11 @@ fun DeviceSelectorScreen(
                     )
                 ) {
                     EnsureRoomResult.Success -> onReady(requestedBaseUrl, requestedRoomId)
-                    is EnsureRoomResult.Failure -> inputError = result.message
+                    is EnsureRoomResult.Failure -> {
+                        inputError = result.message
+                        roomCheckGeneration++
+                        snackbarHostState.showSnackbar(result.message)
+                    }
                 }
             } finally {
                 isPreparingRoom = false
@@ -112,7 +144,23 @@ fun DeviceSelectorScreen(
         }
     }
 
+    LaunchedEffect(baseUrl, roomIdStr, roomCheckGeneration) {
+        roomCheckState = RoomCheckState.Idle
+        val requestedBaseUrl = baseUrl.trim()
+        val requestedRoomId = roomIdStr.trim().toLongOrNull()?.toString() ?: return@LaunchedEffect
+        if (requestedBaseUrl.isEmpty()) return@LaunchedEffect
+
+        delay(800)
+        roomCheckState = RoomCheckState.Checking
+        roomCheckState = when (val result = RoomApi.checkRoom(requestedBaseUrl, requestedRoomId)) {
+            RoomExistenceResult.Exists -> RoomCheckState.Exists
+            RoomExistenceResult.Available -> RoomCheckState.Available
+            is RoomExistenceResult.Failure -> RoomCheckState.Error(result.message)
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(title = { Text("连接设备") })
         }
@@ -146,6 +194,7 @@ fun DeviceSelectorScreen(
                 label = { Text("服务器网址") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                enabled = !isPreparingRoom,
                 isError = inputError != null && baseUrl.isBlank()
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -155,6 +204,7 @@ fun DeviceSelectorScreen(
                 label = { Text("房间号") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                enabled = !isPreparingRoom,
                 isError = inputError != null && roomIdStr.isBlank()
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -184,11 +234,56 @@ fun DeviceSelectorScreen(
                 text = if (roomEntryMode == RoomEntryMode.CREATE) {
                     "房间号已被占用时不会进入，避免与陌生房间串联"
                 } else {
-                    "仅加入已经由自己或同伴创建的房间"
+                    "仅加入已有房间；投屏 App 重启后需要重新选择加入房间"
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            when (val state = roomCheckState) {
+                RoomCheckState.Idle -> Unit
+                RoomCheckState.Checking -> Text(
+                    "正在检查房间号…",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+                RoomCheckState.Exists -> Text(
+                    if (roomEntryMode == RoomEntryMode.CREATE) {
+                        "该房间号已存在，请更换房间号或选择加入房间"
+                    } else {
+                        "房间存在，可以加入"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (roomEntryMode == RoomEntryMode.CREATE) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    }
+                )
+                RoomCheckState.Available -> Text(
+                    if (roomEntryMode == RoomEntryMode.CREATE) {
+                        "房间号可用，可以创建"
+                    } else {
+                        "房间不存在，请先创建房间"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (roomEntryMode == RoomEntryMode.CREATE) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.error
+                    }
+                )
+                is RoomCheckState.Error -> Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        state.message,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    TextButton(onClick = { roomCheckGeneration++ }) {
+                        Text("重试")
+                    }
+                }
+            }
             inputError?.let {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(

@@ -16,6 +16,12 @@ sealed interface EnsureRoomResult {
     data class Failure(val message: String) : EnsureRoomResult
 }
 
+sealed interface RoomExistenceResult {
+    data object Exists : RoomExistenceResult
+    data object Available : RoomExistenceResult
+    data class Failure(val message: String) : RoomExistenceResult
+}
+
 enum class RoomEntryMode {
     CREATE,
     JOIN
@@ -50,6 +56,24 @@ object RoomApi {
             }
         }
 
+    suspend fun checkRoom(baseUrl: String, roomId: String): RoomExistenceResult =
+        withContext(Dispatchers.IO) {
+            try {
+                val serverUrl = baseUrl.trim().trimEnd('/').toHttpUrlOrNull()
+                    ?: return@withContext RoomExistenceResult.Failure("服务器网址格式不正确")
+                checkRoomBlocking(serverUrl, roomId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                RustEngine.logFromKotlin(
+                    "RoomApi",
+                    "检查房间失败: ${e.message}",
+                    LogLevel.ERROR
+                )
+                RoomExistenceResult.Failure("无法连接服务器，请检查服务器网址和网络连接")
+            }
+        }
+
     private fun enterRoomBlocking(
         baseUrl: String,
         roomId: String,
@@ -65,6 +89,14 @@ object RoomApi {
     }
 
     private fun joinRoom(serverUrl: HttpUrl, roomId: String): EnsureRoomResult {
+        return when (val result = checkRoomBlocking(serverUrl, roomId)) {
+            RoomExistenceResult.Exists -> EnsureRoomResult.Success
+            RoomExistenceResult.Available -> EnsureRoomResult.Failure("房间不存在，请先创建房间")
+            is RoomExistenceResult.Failure -> EnsureRoomResult.Failure(result.message)
+        }
+    }
+
+    private fun checkRoomBlocking(serverUrl: HttpUrl, roomId: String): RoomExistenceResult {
         val existsRequest = Request.Builder()
             .url(serverUrl.apiUrl("roomExists", roomId))
             .get()
@@ -72,17 +104,17 @@ object RoomApi {
 
         httpClient.newCall(existsRequest).execute().use { response ->
             if (!response.isSuccessful) {
-                return EnsureRoomResult.Failure("检查房间失败（HTTP ${response.code}）")
+                return RoomExistenceResult.Failure("检查房间失败（HTTP ${response.code}）")
             }
             val json = response.body?.string()?.let(::JSONObject)
-                ?: return EnsureRoomResult.Failure("服务器返回了无效的房间信息")
+                ?: return RoomExistenceResult.Failure("服务器返回了无效的房间信息")
             if (!json.has("exists")) {
-                return EnsureRoomResult.Failure("服务器不支持房间创建接口，请更新服务器")
+                return RoomExistenceResult.Failure("服务器不支持房间创建接口，请更新服务器")
             }
             return if (json.optBoolean("exists")) {
-                EnsureRoomResult.Success
+                RoomExistenceResult.Exists
             } else {
-                EnsureRoomResult.Failure("房间不存在，请先创建房间")
+                RoomExistenceResult.Available
             }
         }
     }
