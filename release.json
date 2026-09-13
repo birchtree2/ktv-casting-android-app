@@ -1,28 +1,28 @@
 {
-  "tag_name": "v1.4.3+dev.room-create",
-  "published_at": "2026-09-13T08:17:30Z",
-  "body": "App 版本: v1.4.3+dev.room-create\nRust 引擎版本: v1.8.1\n\n更新内容:\n- fix: 连接投屏前自动准备房间\n- docs: readme.md添加飞书文档\n- Merge pull request #8 from birchtree2/feat/quality-dropdown-and-fixes\n",
-  "html_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/tag/v1.4.3+dev.room-create",
+  "tag_name": "v1.4.5",
+  "published_at": "2026-09-13T08:31:21Z",
+  "body": "App 版本: v1.4.5\nRust 引擎版本: v1.8.3\n\n更新内容:\n- chore: 测试时使用最新稳定 Rust 库\n- fix: 区分创建和加入房间\n",
+  "html_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/tag/v1.4.5",
   "assets": [
     {
       "name": "app-arm64-v8a-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.4.3%2Bdev.room-create/app-arm64-v8a-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.4.5/app-arm64-v8a-release.apk"
     },
     {
       "name": "app-armeabi-v7a-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.4.3%2Bdev.room-create/app-armeabi-v7a-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.4.5/app-armeabi-v7a-release.apk"
     },
     {
       "name": "app-universal-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.4.3%2Bdev.room-create/app-universal-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.4.5/app-universal-release.apk"
     },
     {
       "name": "app-x86-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.4.3%2Bdev.room-create/app-x86-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.4.5/app-x86-release.apk"
     },
     {
       "name": "app-x86_64-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.4.3%2Bdev.room-create/app-x86_64-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.4.5/app-x86_64-release.apk"
     }
   ]
 }
