@@ -1,28 +1,28 @@
 {
-  "tag_name": "v1.8.1+dev.room-dlna.1",
-  "published_at": "2026-09-20T06:45:43Z",
-  "body": "App 版本: v1.8.1+dev.room-dlna.1\nRust 引擎版本: v1.9.0-dev.dlna-seek.1\n\n更新内容:\n- fix: 修正开发版标记与分支构建版本号\n",
-  "html_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/tag/v1.8.1+dev.room-dlna.1",
+  "tag_name": "v1.9.0+dev.youtube-recast.1",
+  "published_at": "2026-09-28T13:00:08Z",
+  "body": "App 版本: v1.9.0+dev.youtube-recast.1\nRust 引擎版本: v1.10.0-dev.youtube.1\n\n更新内容:\n- 更新Rust依赖，整合重新投屏、定位缓存与YouTube代理\n- feat: 重新投屏按钮\n- build: 更新了composeBom便于调试\n- v1.5.0\n- Merge pull request #13 from KARAOKE-MASTER-ZJU/fix/duplicatedNextSong\n- Merge pull request #15 from StarFreedomX/feat/room-dlna-1080p\n- fix: 修复播放页编辑房间后，仍恢复原房间的bug\n- feat: 删除个人相关配置\n- fix: 切歌逻辑修复\n",
+  "html_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/tag/v1.9.0+dev.youtube-recast.1",
   "assets": [
     {
       "name": "app-arm64-v8a-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.8.1%2Bdev.room-dlna.1/app-arm64-v8a-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.9.0%2Bdev.youtube-recast.1/app-arm64-v8a-release.apk"
     },
     {
       "name": "app-armeabi-v7a-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.8.1%2Bdev.room-dlna.1/app-armeabi-v7a-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.9.0%2Bdev.youtube-recast.1/app-armeabi-v7a-release.apk"
     },
     {
       "name": "app-universal-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.8.1%2Bdev.room-dlna.1/app-universal-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.9.0%2Bdev.youtube-recast.1/app-universal-release.apk"
     },
     {
       "name": "app-x86-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.8.1%2Bdev.room-dlna.1/app-x86-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.9.0%2Bdev.youtube-recast.1/app-x86-release.apk"
     },
     {
       "name": "app-x86_64-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.8.1%2Bdev.room-dlna.1/app-x86_64-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.9.0%2Bdev.youtube-recast.1/app-x86_64-release.apk"
     }
   ]
 }
