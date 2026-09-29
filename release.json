@@ -1,28 +1,28 @@
 {
-  "tag_name": "v1.9.0+dev.youtube-recast.2",
-  "published_at": "2026-09-28T14:35:02Z",
-  "body": "App 版本: v1.9.0+dev.youtube-recast.2\nRust 引擎版本: v1.10.0-dev.youtube.2\n\n更新内容:\n- Merge pull request #1 from birchtree2/codex/update-youtube-range-fix\n- fix: 更新Rust至v1.10.0-dev.youtube.2修复YouTube投屏403\n",
-  "html_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/tag/v1.9.0+dev.youtube-recast.2",
+  "tag_name": "v1.9.0-dev.casting.2",
+  "published_at": "2026-09-29T10:04:18Z",
+  "body": "App 版本: v1.9.0-dev.casting.2\nRust 引擎版本: v1.10.0-dev.casting.2\n\n更新内容:\n- chore: use neutral Rust release tag\n",
+  "html_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/tag/v1.9.0-dev.casting.2",
   "assets": [
     {
       "name": "app-arm64-v8a-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.9.0%2Bdev.youtube-recast.2/app-arm64-v8a-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.9.0-dev.casting.2/app-arm64-v8a-release.apk"
     },
     {
       "name": "app-armeabi-v7a-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.9.0%2Bdev.youtube-recast.2/app-armeabi-v7a-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.9.0-dev.casting.2/app-armeabi-v7a-release.apk"
     },
     {
       "name": "app-universal-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.9.0%2Bdev.youtube-recast.2/app-universal-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.9.0-dev.casting.2/app-universal-release.apk"
     },
     {
       "name": "app-x86-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.9.0%2Bdev.youtube-recast.2/app-x86-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.9.0-dev.casting.2/app-x86-release.apk"
     },
     {
       "name": "app-x86_64-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.9.0%2Bdev.youtube-recast.2/app-x86_64-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.9.0-dev.casting.2/app-x86_64-release.apk"
     }
   ]
 }
