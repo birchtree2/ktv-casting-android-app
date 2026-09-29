@@ -2,6 +2,7 @@ package zju.bangdream.ktv.casting.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.clickable
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,6 +33,9 @@ import zju.bangdream.ktv.casting.ui.components.VolumeControlGroup
 import kotlin.concurrent.thread
 import androidx.core.net.toUri
 import java.net.URLEncoder
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun CastingControlScreen(
@@ -42,6 +47,8 @@ fun CastingControlScreen(
     onChangeDevice: (newDevice: DlnaDeviceItem) -> Unit = {},
     onChangeToBilibiliDevice: (buvid: String, name: String) -> Unit = { _, _ -> },
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val progressState by CastingService.playbackProgress.collectAsState()
     val (currentSec, totalSec) = progressState
 
@@ -50,6 +57,7 @@ fun CastingControlScreen(
 
     var isPlaying by remember { mutableStateOf(true) }
     var isSwitchingSong by remember { mutableStateOf(false) }
+    var isRecasting by remember { mutableStateOf(false) }
     var switchingFromTitle by remember { mutableStateOf("") }
     var queuedCount by remember { mutableIntStateOf(0) }
     var sungCount by remember { mutableIntStateOf(0) }
@@ -81,8 +89,31 @@ fun CastingControlScreen(
         totalSec = totalSec,
         isPlaying = isPlaying,
         isSwitchingSong = isSwitchingSong,
+        isRecasting = isRecasting,
         queuedCount = queuedCount,
         sungCount = sungCount,
+        onRecast = {
+            if (!isRecasting) {
+                isRecasting = true
+                scope.launch {
+                    try {
+                        val result = withContext(Dispatchers.IO) { RustEngine.recastCurrentSong() }
+                        if (result == 1) {
+                            isPlaying = true
+                        } else {
+                            val message = when (result) {
+                                0 -> "当前没有可重试的歌曲"
+                                -2 -> "正在投屏，请稍后重试"
+                                else -> "投屏重试失败，请再次尝试"
+                            }
+                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        }
+                    } finally {
+                        isRecasting = false
+                    }
+                }
+            }
+        },
         onTogglePause = {
             val result = RustEngine.togglePause()
             if (result == 0 || result == 1) {
@@ -126,6 +157,7 @@ fun CastingControlContent(
     totalSec: Long,
     isPlaying: Boolean,
     isSwitchingSong: Boolean = false,
+    isRecasting: Boolean = false,
     queuedCount: Int = 0,
     sungCount: Int = 0,
     onTogglePause: () -> Unit,
@@ -133,6 +165,7 @@ fun CastingControlContent(
     onPrev: () -> Unit,
     onSeek: (Int) -> Unit,
     onReset: () -> Unit,
+    onRecast: () -> Unit,
     onChangeSettings: (newBaseUrl: String, newRoomId: String) -> Unit = { _, _ -> },
     onChangeDevice: (newDevice: DlnaDeviceItem) -> Unit = {},
     onChangeToBilibiliDevice: (buvid: String, name: String) -> Unit = { _, _ -> },
@@ -481,13 +514,44 @@ fun CastingControlContent(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // 歌曲标题：大字显示
-            Text(
-                text = songTitle,
-                style = MaterialTheme.typography.headlineSmall,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                maxLines = 2
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Balance the trailing 48.dp button and 8.dp gap to center the title itself.
+                Spacer(modifier = Modifier.width(56.dp))
+                Text(
+                    text = songTitle,
+                    modifier = Modifier.weight(1f, fill = false),
+                    style = MaterialTheme.typography.headlineSmall,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                IconButton(
+                    onClick = onRecast,
+                    modifier = Modifier.size(48.dp),
+                    colors = IconButtonDefaults.iconButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        disabledContentColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.38f)
+                    ),
+                    enabled = !isRecasting && !isSwitchingSong && songTitle.isNotBlank() &&
+                        songTitle != "正在加载..." && songTitle != "暂无歌曲" &&
+                        songTitle != "已停止" && songTitle != "未连接"
+                ) {
+                    if (isRecasting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    } else {
+                        Icon(Icons.Default.Refresh, contentDescription = "重试投屏")
+                    }
+                }
+            }
 
             if (songTitle == "暂无歌曲") {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -531,6 +595,7 @@ fun CastingControlContent(
                             isDraggingProgress = false
                         },
                         valueRange = 0f..totalProgress,
+                        enabled = !isRecasting,
                         modifier = Modifier
                             .fillMaxWidth(),
                         thumb = {
@@ -606,12 +671,13 @@ fun CastingControlContent(
                 Button(
                     onClick = onPrev,
                     modifier = Modifier.weight(1f),
-                    enabled = sungCount != 0
+                    enabled = !isRecasting && sungCount != 0
                 ) {
                     Text("上一首")
                 }
                 Button(
                     onClick = onTogglePause,
+                    enabled = !isRecasting,
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isPlaying) MaterialTheme.colorScheme.primary else Color(
@@ -625,7 +691,7 @@ fun CastingControlContent(
                 Button(
                     onClick = onNext,
                     modifier = Modifier.weight(1f),
-                    enabled = queuedCount != 0
+                    enabled = !isRecasting && queuedCount != 0
                 ) {
                     Text("下一首")
                 }
@@ -684,9 +750,9 @@ private fun formatTime(seconds: Long): String {
 /**
  * Android Studio 预览专用函数
  */
-@Preview(showBackground = true, name = "Casting Control - Normal")
+@Preview(showBackground = true, name = "Casting Control - Bilibili")
 @Composable
-fun CastingControlPreview() {
+fun BiliCastingControlPreview() {
     MaterialTheme(colorScheme = lightColorScheme(primary = Color(0xFFFF3377))) {
         CastingControlContent(
             deviceName = "Preview Device",
@@ -700,6 +766,27 @@ fun CastingControlPreview() {
             onPrev = {},
             onSeek = {},
             onReset = {},
+            onRecast = {},
+            songTitle = "八月のif - Poppin'Party"
+        )
+    }
+}@Preview(showBackground = true, name = "Casting Control - DLNA")
+@Composable
+fun DlnaCastingControlPreview() {
+    MaterialTheme(colorScheme = lightColorScheme(primary = Color(0xFFFF3377))) {
+        CastingControlContent(
+            deviceName = "Preview Device",
+            roomId = "8888",
+            castMode = "dlna",
+            currentSec = 45,
+            totalSec = 210,
+            isPlaying = true,
+            onTogglePause = {},
+            onNext = {},
+            onPrev = {},
+            onSeek = {},
+            onReset = {},
+            onRecast = {},
             songTitle = "八月のif - Poppin'Party"
         )
     }

@@ -11,6 +11,8 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
+data class ActiveRoom(val baseUrl: String, val roomId: String)
+
 sealed interface EnsureRoomResult {
     data object Success : EnsureRoomResult
     data class Failure(val message: String) : EnsureRoomResult

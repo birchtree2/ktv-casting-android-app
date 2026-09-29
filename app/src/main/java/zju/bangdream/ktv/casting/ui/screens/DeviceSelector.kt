@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import zju.bangdream.ktv.casting.ActiveRoom
 import zju.bangdream.ktv.casting.DlnaDeviceItem
 import zju.bangdream.ktv.casting.EnsureRoomResult
 import zju.bangdream.ktv.casting.RoomApi
@@ -24,8 +25,6 @@ import zju.bangdream.ktv.casting.RoomEntryMode
 import zju.bangdream.ktv.casting.RoomExistenceResult
 import zju.bangdream.ktv.casting.RustEngine
 import kotlin.concurrent.thread
-
-private data class ActiveRoom(val baseUrl: String, val roomId: String)
 
 private enum class RoomOperation {
     CREATE,
@@ -42,6 +41,8 @@ private fun normalizeDeviceUrl(input: String): String {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeviceSelectorScreen(
+    activeRoom: ActiveRoom?,
+    onActiveRoomChange: (ActiveRoom?) -> Unit,
     onDeviceSelect: (String, String, DlnaDeviceItem) -> Unit,
     onBilibiliMode: (baseUrl: String, roomId: String) -> Unit,
 ) {
@@ -61,7 +62,6 @@ fun DeviceSelectorScreen(
     }
     var roomIdStr by remember { mutableStateOf(prefs.getString("room_id", "1111") ?: "") }
     var inputError by remember { mutableStateOf<String?>(null) }
-    var activeRoom by remember { mutableStateOf<ActiveRoom?>(null) }
     var roomOperation by remember { mutableStateOf<RoomOperation?>(null) }
     val isPreparingRoom = roomOperation != null
 
@@ -83,21 +83,11 @@ fun DeviceSelectorScreen(
     }
 
     fun saveActiveRoom(room: ActiveRoom) {
-        prefs.edit().apply {
-            putString("active_room_base_url", room.baseUrl)
-            putString("active_room_id", room.roomId)
-            apply()
-        }
-        activeRoom = room
+        onActiveRoomChange(room)
     }
 
     fun clearActiveRoom() {
-        prefs.edit().apply {
-            remove("active_room_base_url")
-            remove("active_room_id")
-            apply()
-        }
-        activeRoom = null
+        onActiveRoomChange(null)
     }
 
     fun validateInputs(): Boolean {
@@ -141,7 +131,13 @@ fun DeviceSelectorScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(activeRoom) {
+        if (activeRoom != null) {
+            baseUrl = activeRoom.baseUrl
+            roomIdStr = activeRoom.roomId
+            inputError = null
+            return@LaunchedEffect
+        }
         val savedBaseUrl = prefs.getString("active_room_base_url", null)?.trim().orEmpty()
         val savedRoomId = prefs.getString("active_room_id", null)?.trim().orEmpty()
         if (savedBaseUrl.isEmpty() || savedRoomId.isEmpty()) return@LaunchedEffect
@@ -150,8 +146,8 @@ fun DeviceSelectorScreen(
         roomIdStr = savedRoomId
         roomOperation = RoomOperation.RESTORE
         try {
-            when (val result = RoomApi.checkRoom(savedBaseUrl, roomIdStr)) {
-                RoomExistenceResult.Exists -> saveActiveRoom(ActiveRoom(savedBaseUrl, roomIdStr))
+            when (val result = RoomApi.checkRoom(savedBaseUrl, savedRoomId)) {
+                RoomExistenceResult.Exists -> saveActiveRoom(ActiveRoom(savedBaseUrl, savedRoomId))
                 RoomExistenceResult.Available -> {
                     clearActiveRoom()
                     inputError = "上次使用的房间已失效，请重新创建"

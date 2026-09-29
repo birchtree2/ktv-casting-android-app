@@ -8,7 +8,7 @@ Native Rust artifacts belong in `app/src/main/jniLibs/<abi>/libktv_casting_lib.s
 
 ## Dependent Rust Library
 
-The upstream `ktv-casting` Rust library source lives at `../star/ktv-casting` (local clone of the `android-app` branch). The `.so` is not built locally here — it's downloaded from the Rust repo's GitHub release during CI. See the Rust repo's `CLAUDE.md` for JNI/build details and the version-linking rule (`rust_libs_version` in `gradle.properties` must match the Rust repo's release tag).
+The upstream Rust library is maintained in `KARAOKE-MASTER-ZJU/ktv-casting`. CI downloads its `.so` artifacts from the release tag specified by `rust_libs_version` in `gradle.properties`. The optional `CUSTOM_RUST_REPO` variable overrides the download repository.
 
 ## Fork Configuration
 
@@ -41,16 +41,7 @@ Use 4-space indentation for Kotlin and Gradle Kotlin DSL files. Keep dependency 
 
 Use JUnit 4 in `app/src/test/java`. Use AndroidX Test, Espresso, and Compose UI tests in `app/src/androidTest/java`. Name tests after behavior, such as `queueEmpty_disablesNextButton`.
 
-This repository is verified through GitHub Actions rather than local Gradle. Before tagging, ensure `gradle.properties` manually sets `rust_libs_version` to the intended Rust library version. Push commits, create and push a `v*` tag, then monitor with `gh run list --limit 5` and `gh run watch <run-id>`. Plain branch pushes may not start a run.
-
-## Release & Tag Conventions
-
-开发测试一律在 **fork 仓库**（如 `birchtree2/ktv-casting-android-app`）内进行，不直接在 `KARAOKE-MASTER-ZJU` 主仓库内开发。为避免开发 tag 与主仓库 tag 冲突，按以下规则打 tag：
-
-- **fork / 开发仓库**：release tag 使用 `vA.B.C+dev(.name)(.description)` 形式（SemVer 构建元数据），例如 `v1.6.13+dev.roomid-string`。**dev tag 只推送 fork，不推送主仓库。**
-- **主仓库 `KARAOKE-MASTER-ZJU/ktv-casting-android-app`**：正式发布使用**无元数据**的 SemVer 标准，`vA.B.C` 或 `vA.B.C-alpha`（如 `v1.4.2`、`v1.4.1-alpha.1`），不带 `+dev` 后缀。
-- 严格按 Semantic Versioning 递增基础版本：兼容新增功能升 minor，兼容修复升 patch，破坏性变更升 major；`+dev.*` 不能代替基础版本递增。
-- GitHub Release 必须通过推送 `v*` tag 触发。只推 `master` 仅做编译检查，不创建 Release。
+This repository is verified through GitHub Actions rather than local Gradle. Before tagging, ensure `gradle.properties` manually sets `rust_libs_version` to the latest Rust release. Release tags must follow Semantic Versioning in `vMAJOR.MINOR.PATCH` form, for example `v1.6.9`. Push commits, create and push a `v*` tag, then monitor with `gh run list --limit 5` and `gh run watch <run-id>`. Plain branch pushes may not start a run.
 
 The CI workflow (`.github/workflows/build-and-release.yml`) handles:
 - Auto-build on `v*` tag push
@@ -63,10 +54,7 @@ CI secrets required: `SIGNING_KEY`, `KEY_STORE_PASSWORD`, `ALIAS`, `KEY_PASSWORD
 
 ## Commit & Pull Request Guidelines
 
-- 所有通过 tag 发布的版本（包括 dev/prerelease）都必须更新 GitHub Pages 的统一 `release.json`，供已有 App 检测更新。未经用户要求，不按开发版/正式版拆分更新渠道，也不跳过开发版的 Pages 更新。
-- 功能分支隔离与更新渠道独立是两回事；开房间与 DLNA 优化代码是否合并须按用户要求处理，不要用跳过发布更新来代替代码隔离。
-
-Commit message 必须使用中文，并保持主题简短、准确。可按需使用 `feat:`、`fix:`、`chore:` 等 Conventional Commit 前缀。
+Commit history uses Conventional Commit-style prefixes: `feat:`, `fix:`, and `chore:`. Keep subjects concise; Chinese or English is acceptable.
 
 Pull requests should include a summary, testing performed, and any device/Android version used. Include screenshots for visible Compose UI changes. Mention Rust `.so`, ABI, update-check, or release packaging changes explicitly.
 

@@ -164,7 +164,6 @@ jobs:
             ${{ env.NOTES }}
 
       # 8. 生成 release.json（供应用内更新检查使用）
-      # 开发预发布也覆盖统一更新入口；不同功能分支不等于不同更新渠道。
       - name: Generate release.json
         if: startsWith(github.ref, 'refs/tags/')
         env:

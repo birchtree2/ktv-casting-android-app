@@ -2,13 +2,11 @@
 
 ---
 
-使用教程见[飞书文档](https://jcntv1iqoo5s.feishu.cn/wiki/Ytt1wNh88i6E9jkEndhcxNmYnBd)
+使用教程见[飞书文档](https://idol-zju.feishu.cn/wiki/Ytt1wNh88i6E9jkEndhcxNmYnBd)
 
 ---
 
 本项目是 [ktv-casting](https://github.com/KARAOKE-MASTER-ZJU/ktv-casting) 的安卓前端
-
-目前采用的分支为 [android-app](https://github.com/KARAOKE-MASTER-ZJU/ktv-casting/tree/android-app) 分支
 
 ## 环境配置
 

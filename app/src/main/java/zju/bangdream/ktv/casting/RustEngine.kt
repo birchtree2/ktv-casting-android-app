@@ -53,8 +53,17 @@ object RustEngine {
 
     external fun prevSong()
 
+    /**
+     * 使用当前会话重新投屏当前歌曲。必须在后台线程调用。
+     * @return 1=成功，0=无当前歌曲/未连接，-1=失败或超时，-2=正在投屏
+     */
+    external fun recastCurrentSong(): Int
+
     // 查询接口：由 KT 轮询获取状态
     external fun queryProgress(): IntArray      // 返回当前秒数
+
+    // 服务轮询专用：查询进度，并由 Rust 执行一次性自动切歌与固定 hash 重试。
+    external fun pollPlaybackProgress(): IntArray
 
     external fun resetEngine()
     /**

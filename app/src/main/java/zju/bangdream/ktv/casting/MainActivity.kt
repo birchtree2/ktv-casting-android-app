@@ -106,6 +106,23 @@ class MainActivity : ComponentActivity() {
                 val scope = rememberCoroutineScope()
 
                 val prefs = remember { getSharedPreferences("ktv_settings", Context.MODE_PRIVATE) }
+                var activeRoom by remember { mutableStateOf<ActiveRoom?>(null) }
+                // 连接页和播放页共享房间状态，同时更新下次启动恢复的记录。
+                val updateActiveRoom: (ActiveRoom?) -> Unit = { room ->
+                    prefs.edit().apply {
+                        if (room == null) {
+                            remove("active_room_base_url")
+                            remove("active_room_id")
+                        } else {
+                            putString("base_url", room.baseUrl)
+                            putString("room_id", room.roomId)
+                            putString("active_room_base_url", room.baseUrl)
+                            putString("active_room_id", room.roomId)
+                        }
+                        apply()
+                    }
+                    activeRoom = room
+                }
 
                 Surface(
                     modifier = Modifier
@@ -192,6 +209,8 @@ class MainActivity : ComponentActivity() {
                                 ) { pageIndex ->
                                     when (pageIndex) {
                                         0 -> DeviceSelectorScreen(
+                                            activeRoom = activeRoom,
+                                            onActiveRoomChange = updateActiveRoom,
                                             onDeviceSelect = { url, room, device ->
                                                 // 如果当前已经有连接，先停止旧连接
                                                 if (selectedDevice != null || castMode == "bilibili") {
@@ -236,14 +255,7 @@ class MainActivity : ComponentActivity() {
                                                         stopCasting()
                                                         selectedBaseUrl = newUrl
                                                         selectedRoomId = newRoomId
-                                                        prefs.edit().apply {
-                                                            putString("base_url", newUrl)
-                                                            putString(
-                                                                "room_id",
-                                                                newRoomId
-                                                            )
-                                                            apply()
-                                                        }
+                                                        updateActiveRoom(ActiveRoom(newUrl, newRoomId))
                                                         if (castMode == "bilibili") {
                                                             // B站模式：用新参数重启B站投屏
                                                             val buvid = prefs.getString(

@@ -76,7 +76,8 @@ class CastingService : Service() {
             delay(2000)
             while (isActive) {
                 delay(500)
-                val progress = RustEngine.queryProgress()
+                // Rust handles the once trigger and retries with a fixed playlist hash.
+                val progress = RustEngine.pollPlaybackProgress()
                 if (progress.size < 2) continue
 
                 val current = progress[0].toLong()
@@ -95,10 +96,6 @@ class CastingService : Service() {
                     // 通知栏现在显示：[歌名] 进度
                     updateNotification("$title (${formatTime(current)} / ${formatTime(total)})")
 
-                    if (total - current <= 2 && current > 5) {
-                        RustEngine.nextSong()
-                        delay(1000)
-                    }
                 } else {
                     updateNotification("当前播放: $title")
                 }
