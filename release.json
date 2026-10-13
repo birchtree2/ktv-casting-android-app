@@ -1,28 +1,28 @@
 {
-  "tag_name": "v1.9.0-dev.casting.2",
-  "published_at": "2026-09-29T10:04:18Z",
-  "body": "本次为开发预览版，主要改进投屏兼容性与播放稳定性。\n\n更新内容：\n- 新增重新投屏按钮，方便在播放异常时重试。\n- 优化自动切歌流程，减少重复切歌。\n- 改进播放定位、缓存与媒体请求兼容性。\n- 修复修改房间后可能恢复旧房间的问题。\n\n提供四种架构及通用 APK。尚待更多 Android 设备与电视的实机回归验证。\n",
-  "html_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/tag/v1.9.0-dev.casting.2",
+  "tag_name": "v1.10.0",
+  "published_at": "2026-10-13T19:21:32Z",
+  "body": "App 版本: v1.10.0\nRust 引擎版本: v1.11.0\n\n更新内容:\n- chore: 使用Rust正式仓库地址下载新版引擎\n- feat: 设置中新增DLNA直连并更新正式发布依赖\n- update  ktv-casting's version to v1.10.0\n- fix: 修复时长获取bug\n- feat: 日志界面导出区分为复制/保存/分享\n- feat: 同步rust重试逻辑和错误日志更新\n- feat: 仓库未配置签名密钥时使用debug签\n- Merge pull request #20 from KARAOKE-MASTER-ZJU/feat/git-sub-module\n- Merge remote-tracking branch 'origin/master' into feat/git-sub-module\n- feat: 按触发方式选择 Debug APK 签名\n- Merge pull request #19 from KARAOKE-MASTER-ZJU/codex/use-neutral-rust-release-tag\n- chore: use neutral Rust release tag\n- chore: CI artifacts 保留 30 天\n- fix: 允许 CI 构建同时运行\n- perf: 并行构建 Rust ABI\n- feat: ci直接上传apk\n- fix: 修复 Rust 构建缓存键\n- feat: 去除debug apk发布工作流的test/lint\n- sync rust lib\n- Merge remote-tracking branch 'origin/master' into feat/git-sub-module\n- Merge pull request #17 from birchtree2/codex/update-rust-youtube-recast\n- Merge pull request #1 from birchtree2/codex/update-youtube-range-fix\n- fix: 更新Rust至v1.10.0-dev.youtube.2修复YouTube投屏403\n- 更新Rust依赖，整合重新投屏、定位缓存与YouTube代理\n- chore: delete vscode workspaces in .github\n- feat: 使用子模块构建的ci工作流\n- feat: 添加git子模块\n- feat: 重新投屏按钮\n- build: 更新了composeBom便于调试\n- v1.5.0\n- Merge pull request #13 from KARAOKE-MASTER-ZJU/fix/duplicatedNextSong\n- Merge pull request #15 from StarFreedomX/feat/room-dlna-1080p\n- fix: 修复播放页编辑房间后，仍恢复原房间的bug\n- feat: 删除个人相关配置\n- fix: 切歌逻辑修复\n",
+  "html_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/tag/v1.10.0",
   "assets": [
     {
+      "name": "app-universal-release.apk",
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.10.0/app-universal-release.apk"
+    },
+    {
       "name": "app-arm64-v8a-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.9.0-dev.casting.2/app-arm64-v8a-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.10.0/app-arm64-v8a-release.apk"
     },
     {
       "name": "app-armeabi-v7a-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.9.0-dev.casting.2/app-armeabi-v7a-release.apk"
-    },
-    {
-      "name": "app-universal-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.9.0-dev.casting.2/app-universal-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.10.0/app-armeabi-v7a-release.apk"
     },
     {
       "name": "app-x86-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.9.0-dev.casting.2/app-x86-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.10.0/app-x86-release.apk"
     },
     {
       "name": "app-x86_64-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.9.0-dev.casting.2/app-x86_64-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.10.0/app-x86_64-release.apk"
     }
   ]
 }
