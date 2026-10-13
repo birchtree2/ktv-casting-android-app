@@ -67,7 +67,8 @@ jobs:
           ENV_CUSTOM_REPO: ${{ vars.CUSTOM_RUST_REPO }} # 可选环境变量，允许覆盖默认仓库地址
         run: |
           ABIS=("arm64-v8a" "armeabi-v7a" "x86_64" "x86")
-          RUST_REPO="${ENV_CUSTOM_REPO:-KARAOKE-MASTER-ZJU/ktv-casting}"
+          PINNED_REPO=$(sed -n 's/^rust_libs_repo=//p' gradle.properties)
+          RUST_REPO="${ENV_CUSTOM_REPO:-${PINNED_REPO:-KARAOKE-MASTER-ZJU/ktv-casting}}"
           for ABI in "${ABIS[@]}"; do
             TARGET_DIR="app/src/main/jniLibs/$ABI"
             mkdir -p "$TARGET_DIR"
@@ -147,7 +148,7 @@ jobs:
             published_at: .publishedAt,
             body: .body,
             html_url: "https://github.com/${{ github.repository }}/releases/tag/${{ env.APP_CODE_VERSION }}",
-            assets: .assets | map({
+            assets: (.assets | sort_by(if .name == "app-universal-release.apk" then 0 else 1 end)) | map({
               name: .name,
               browser_download_url: .url
             })

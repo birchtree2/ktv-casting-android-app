@@ -35,6 +35,7 @@ import okhttp3.Request
 import org.json.JSONArray
 import zju.bangdream.ktv.casting.BuildConfig
 import zju.bangdream.ktv.casting.R
+import zju.bangdream.ktv.casting.RustEngine
 import zju.bangdream.ktv.casting.update.UpdateChecker
 import zju.bangdream.ktv.casting.update.UpdateDialog
 import java.util.concurrent.TimeUnit
@@ -43,6 +44,8 @@ import java.util.concurrent.TimeUnit
 @Composable
 fun SettingsScreen(onBack: () -> Unit, onOpenLogs: () -> Unit) {
     val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("ktv_settings", Context.MODE_PRIVATE) }
+    var dlnaDirect by remember { mutableStateOf(prefs.getBoolean("dlna_direct", false)) }
     androidx.activity.compose.BackHandler(onBack = onBack)
     val lifecycleOwner = LocalLifecycleOwner.current
     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
@@ -69,7 +72,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenLogs: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("后台运行设置") },
+                title = { Text("设置") },
                 actions = {
                     IconButton(onClick = {
                         isIgnoringBattery = checkBatteryOptimizations(context)
@@ -89,6 +92,30 @@ fun SettingsScreen(onBack: () -> Unit, onOpenLogs: () -> Unit) {
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("DLNA 原始链接直连", style = MaterialTheme.typography.titleMedium)
+                        Switch(checked = dlnaDirect, onCheckedChange = { enabled ->
+                            RustEngine.setDlnaDirect(enabled)
+                            prefs.edit().putBoolean("dlna_direct", enabled).apply()
+                            dlnaDirect = enabled
+                        })
+                    }
+                    Text(
+                        "开启后，接收设备直接访问原始媒体链接，不经过手机代理。B站仅支持 720P，1080P 混流不可用。设备需能直接访问媒体地址，部分设备可能拒绝播放。",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text("下次切歌或点击“重新投屏”生效。关闭后恢复媒体代理。",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 8.dp))
+                }
+            }
+
             Text(
                 text = "请确保以下状态为“已允许”，以防投屏中途断开。",
                 style = MaterialTheme.typography.bodyMedium,

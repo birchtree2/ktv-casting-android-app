@@ -5,6 +5,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import android.content.Context
+import android.content.SharedPreferences
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
@@ -19,17 +22,27 @@ import kotlin.concurrent.thread
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BilibiliExtraControls(dlnaMode: Boolean = false) {
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("ktv_settings", Context.MODE_PRIVATE) }
+    var direct by remember { mutableStateOf(prefs.getBoolean("dlna_direct", false)) }
+    DisposableEffect(prefs) {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { settings, key ->
+            if (key == "dlna_direct") direct = settings.getBoolean(key, false)
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
     var danmakuOn by remember { mutableStateOf(false) }
     // 切换投屏模式时必须重建本地状态；否则同一个 Compose slot 会保留
     // B 站模式的 1080P 选项，虽然 DLNA 实际仍从 720P 开始播放。
     var quality by remember(dlnaMode) { mutableStateOf(if (dlnaMode) BiliQuality.P720 else BiliQuality.DEFAULT) }
     val qualityOptions = if (dlnaMode) {
-        listOf(BiliQuality.P720, BiliQuality.P1080)
+        if (direct) listOf(BiliQuality.P720) else listOf(BiliQuality.P720, BiliQuality.P1080)
     } else {
         BiliQuality.entries.toList()
     }
 
-    LaunchedEffect(dlnaMode) {
+    LaunchedEffect(dlnaMode, direct) {
         if (dlnaMode) {
             // Rust 每次新建 DLNA 引擎也会重置到 720P。不要读取遗留会话的
             // 1080P 状态，否则下拉框会在用户尚未选择时错误地显示 1080P。

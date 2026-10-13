@@ -34,6 +34,9 @@ object RustEngine {
     // 基础接口
     external fun initLogging(level: Int)
     external fun initSessionDir(dirPath: String)
+    /** DLNA 直连开关；下次切歌或重新投屏生效，开启后仅提供 B站 720P。 */
+    external fun setDlnaDirect(enabled: Boolean)
+    external fun getDlnaDirect(): Boolean
     external fun searchDevices(): Array<DlnaDeviceItem>
 
     /**
