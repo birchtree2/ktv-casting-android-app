@@ -50,7 +50,7 @@ class MainActivity : ComponentActivity() {
 
         // 恢复上次保存的 B 站 Session（如果有）
         val prefs = getSharedPreferences("ktv_settings", MODE_PRIVATE)
-        RustEngine.setDlnaDirect(prefs.getBoolean("dlna_direct", false))
+        DlnaProxySettings.setEnabled(this, DlnaProxySettings.isEnabled(this))
         val savedSession = prefs.getString("bilibili_session", null)
         if (!savedSession.isNullOrEmpty()) {
             val ok = RustEngine.restoreBilibiliSession(savedSession)

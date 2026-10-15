@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.dp
 import zju.bangdream.ktv.casting.BilibiliDevice
 import zju.bangdream.ktv.casting.CastingService
 import zju.bangdream.ktv.casting.DlnaDeviceItem
+import zju.bangdream.ktv.casting.DlnaProxySettings
+import zju.bangdream.ktv.casting.ui.components.DlnaEnvironmentDialog
 import zju.bangdream.ktv.casting.RustEngine
 import zju.bangdream.ktv.casting.parseBilibiliDevices
 import org.json.JSONArray
@@ -242,7 +244,8 @@ fun CastingControlContent(
 
     // 更换设备对话框
     if (showDeviceDialog) {
-        var selectedTab by remember { mutableIntStateOf(0) } // 0=DLNA, 1=B站
+        var selectedTab by remember { mutableIntStateOf(if (castMode == "bilibili") 1 else 0) }
+        var showDlnaEnvironment by remember { mutableStateOf(castMode != "bilibili") }
         var dlnaDeviceList by remember { mutableStateOf(emptyArray<DlnaDeviceItem>()) }
         var dlnaSearching by remember { mutableStateOf(false) }
         var bilibiliDeviceList by remember { mutableStateOf<List<BilibiliDevice>>(emptyList()) }
@@ -263,7 +266,7 @@ fun CastingControlContent(
                     ) {
                         FilterChip(
                             selected = selectedTab == 0,
-                            onClick = { selectedTab = 0 },
+                            onClick = { showDlnaEnvironment = true },
                             label = { Text("DLNA 设备") },
                             modifier = Modifier.weight(1f)
                         )
@@ -436,6 +439,19 @@ fun CastingControlContent(
                 TextButton(onClick = { showDeviceDialog = false }) { Text("取消") }
             }
         )
+        if (showDlnaEnvironment) {
+            DlnaEnvironmentDialog(
+                onChoice = { proxyEnabled ->
+                    DlnaProxySettings.setEnabled(context, proxyEnabled)
+                    selectedTab = 0
+                    showDlnaEnvironment = false
+                },
+                onDismiss = {
+                    showDlnaEnvironment = false
+                    if (selectedTab == 0) showDeviceDialog = false
+                }
+            )
+        }
     }
 
     Scaffold(

@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import zju.bangdream.ktv.casting.ActiveRoom
 import zju.bangdream.ktv.casting.DlnaDeviceItem
+import zju.bangdream.ktv.casting.DlnaProxySettings
+import zju.bangdream.ktv.casting.ui.components.DlnaEnvironmentDialog
 import zju.bangdream.ktv.casting.EnsureRoomResult
 import zju.bangdream.ktv.casting.RoomApi
 import zju.bangdream.ktv.casting.RoomEntryMode
@@ -69,6 +71,7 @@ fun DeviceSelectorScreen(
     var dlnaShowManualInput by remember { mutableStateOf(false) }
     var deviceList by remember { mutableStateOf(emptyArray<DlnaDeviceItem>()) }
     var isSearching by remember { mutableStateOf(false) }
+    var showDlnaEnvironment by remember { mutableStateOf(false) }
     var isDirectConnecting by remember { mutableStateOf(false) }
     var searchError by remember { mutableStateOf<String?>(null) }
     var directIp by remember { mutableStateOf(prefs.getString("direct_ip", "") ?: "") }
@@ -80,6 +83,30 @@ fun DeviceSelectorScreen(
             putString("direct_ip", directIp)
             apply()
         }
+    }
+
+    if (showDlnaEnvironment) {
+        DlnaEnvironmentDialog(
+            onChoice = { proxyEnabled ->
+                DlnaProxySettings.setEnabled(context, proxyEnabled)
+                showDlnaEnvironment = false
+                saveSettings()
+                isSearching = true
+                searchError = null
+                dlnaShowManualInput = false
+                deviceList = emptyArray()
+                thread {
+                    val results = RustEngine.searchDevices()
+                    deviceList = results
+                    isSearching = false
+                    if (results.isEmpty()) {
+                        searchError = "未发现设备，请检查设备是否在线和 WiFi 是否支持多播"
+                        dlnaShowManualInput = true
+                    }
+                }
+            },
+            onDismiss = { showDlnaEnvironment = false }
+        )
     }
 
     fun saveActiveRoom(room: ActiveRoom) {
@@ -323,20 +350,7 @@ fun DeviceSelectorScreen(
 
                         // 自动搜索按钮
                         Button(
-                            onClick = {
-                                saveSettings()
-                                isSearching = true; searchError = null; dlnaShowManualInput =
-                                false; deviceList = emptyArray()
-                                thread {
-                                    val results = RustEngine.searchDevices()
-                                    deviceList = results; isSearching = false
-                                    if (results.isEmpty()) {
-                                        searchError =
-                                            "未发现设备，请检查设备是否在线和 WiFi 是否支持多播"
-                                        dlnaShowManualInput = true
-                                    }
-                                }
-                            },
+                            onClick = { showDlnaEnvironment = true },
                             modifier = Modifier.fillMaxWidth(),
                             enabled = activeRoom != null && !isSearching && !isDirectConnecting
                         ) { Text(if (isSearching) "正在搜索..." else "搜索 DLNA 设备") }
