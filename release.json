@@ -1,28 +1,28 @@
 {
-  "tag_name": "v1.10.0",
-  "published_at": "2026-10-13T19:21:32Z",
-  "body": "App 版本：v1.10.0\nRust 引擎版本：v1.11.0\n\n本次为正式版，更新内容：\n- 设置中新增“DLNA 原始链接直连”开关，接收设备可直接访问媒体地址。\n- 直连模式下 B站仅支持 720P，1080P 混流不可用；关闭开关后恢复默认媒体代理。\n- 开关会保存到本机，下次切歌或点击“重新投屏”生效。\n- 同步最新主线的时长修复、请求重试与日志导出改进。\n- 更新 Rust 引擎，并提供四种架构及通用 APK；应用内更新优先使用通用 APK。\n\n直连需要接收设备能够访问媒体源站。若出现拒绝播放或链接过期，请关闭直连后重新投屏。\n",
-  "html_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/tag/v1.10.0",
+  "tag_name": "v1.11.0",
+  "published_at": "2026-10-15T06:17:44Z",
+  "body": "App 版本: v1.11.0\nRust 引擎版本: v1.11.0\n\n更新内容:\n- test: 保留模拟器测试结束后的界面截图\n- chore: 递增应用版本码以发布代理设置更新\n- feat: 简化反向代理开关并按纯K场景引导DLNA投屏\n",
+  "html_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/tag/v1.11.0",
   "assets": [
     {
       "name": "app-universal-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.10.0/app-universal-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.11.0/app-universal-release.apk"
     },
     {
       "name": "app-arm64-v8a-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.10.0/app-arm64-v8a-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.11.0/app-arm64-v8a-release.apk"
     },
     {
       "name": "app-armeabi-v7a-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.10.0/app-armeabi-v7a-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.11.0/app-armeabi-v7a-release.apk"
     },
     {
       "name": "app-x86-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.10.0/app-x86-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.11.0/app-x86-release.apk"
     },
     {
       "name": "app-x86_64-release.apk",
-      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.10.0/app-x86_64-release.apk"
+      "browser_download_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/download/v1.11.0/app-x86_64-release.apk"
     }
   ]
 }
