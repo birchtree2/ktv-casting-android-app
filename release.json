@@ -1,7 +1,7 @@
 {
   "tag_name": "v1.11.0",
   "published_at": "2026-10-15T06:17:44Z",
-  "body": "App 版本: v1.11.0\nRust 引擎版本: v1.11.0\n\n更新内容:\n- test: 保留模拟器测试结束后的界面截图\n- chore: 递增应用版本码以发布代理设置更新\n- feat: 简化反向代理开关并按纯K场景引导DLNA投屏\n",
+  "body": "App 版本：v1.11.0\nRust 引擎版本：v1.11.0\n\n更新内容：\n- 将 DLNA 开关简化为“反向代理”：开启使用手机代理，关闭使用原始媒体链接。\n- 选择 DLNA 时询问是否在纯K；选择“是，在纯K”自动开启反向代理。\n- 播放页新增反向代理开关，与设置页实时同步，保留旧版已保存的选择。\n- 关闭代理时 B站仅支持 720P；开启代理后可选择 1080P。\n\n开关在下次切歌或点击“重新投屏”时生效。\n\n提供四种架构及通用 APK，应用内更新优先使用通用 APK。\n",
   "html_url": "https://github.com/birchtree2/ktv-casting-android-app/releases/tag/v1.11.0",
   "assets": [
     {
