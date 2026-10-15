@@ -134,10 +134,14 @@ class DlnaProxyUiTest {
         }
         bitmap.recycle()
         // Gradle uninstalls the test app afterwards, so preserve images outside its data directory.
-        val command = "mkdir -p /sdcard/Download/ktv-ui-screenshots && " +
-            "cp '${file.absolutePath}' '/sdcard/Download/ktv-ui-screenshots/$name.png' && echo saved"
-        val output = ParcelFileDescriptor.AutoCloseInputStream(automation.executeShellCommand(command))
-            .bufferedReader().use { it.readText() }
-        assertTrue("Screenshot export failed: $output", output.contains("saved"))
+        fun shell(command: String): String =
+            ParcelFileDescriptor.AutoCloseInputStream(automation.executeShellCommand(command))
+                .bufferedReader().use { it.readText() }
+        // UiAutomation runs a command directly; shell operators such as && are not interpreted.
+        val destination = "/sdcard/Download/ktv-ui-screenshots/$name.png"
+        shell("mkdir -p /sdcard/Download/ktv-ui-screenshots")
+        shell("cp ${file.absolutePath} $destination")
+        val output = shell("ls -l $destination")
+        assertTrue("Screenshot export failed: $output", output.contains("$name.png"))
     }
 }
