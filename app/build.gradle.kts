@@ -39,7 +39,7 @@ android {
         applicationId = "zju.bangdream.ktv.casting"
         minSdk = 24
         targetSdk = 36
-        versionCode = 3
+        versionCode = 4
         versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
