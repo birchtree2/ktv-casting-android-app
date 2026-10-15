@@ -2,6 +2,7 @@ package zju.bangdream.ktv.casting
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.os.ParcelFileDescriptor
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
@@ -125,10 +126,18 @@ class DlnaProxyUiTest {
 
     private fun screenshot(name: String) {
         compose.waitForIdle()
-        val bitmap = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
-        File(context.getExternalFilesDir(null), "$name.png").outputStream().use {
+        val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        val bitmap = automation.takeScreenshot()
+        val file = File(context.getExternalFilesDir(null), "$name.png")
+        file.outputStream().use {
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
         }
         bitmap.recycle()
+        // Gradle uninstalls the test app afterwards, so preserve images outside its data directory.
+        val command = "mkdir -p /sdcard/Download/ktv-ui-screenshots && " +
+            "cp '${file.absolutePath}' '/sdcard/Download/ktv-ui-screenshots/$name.png' && echo saved"
+        val output = ParcelFileDescriptor.AutoCloseInputStream(automation.executeShellCommand(command))
+            .bufferedReader().use { it.readText() }
+        assertTrue("Screenshot export failed: $output", output.contains("saved"))
     }
 }

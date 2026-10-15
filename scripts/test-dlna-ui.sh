@@ -3,7 +3,7 @@ set -uo pipefail
 
 collect_screenshots() {
     mkdir -p ui-screenshots
-    adb pull /sdcard/Android/data/zju.bangdream.ktv.casting/files/. ui-screenshots/ || true
+    adb pull /sdcard/Download/ktv-ui-screenshots/. ui-screenshots/ || true
 }
 trap collect_screenshots EXIT
 
